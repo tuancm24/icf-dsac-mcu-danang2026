@@ -32,6 +32,13 @@ The system is developed on the SONiX SN8F5708 EVK and implements:
 - Storage:
   - EEPROM
 
+## Development Environment
+
+- IDE: Keil µVision C51 v9.61
+- Compiler: Keil C51
+- Programmer: SN-Link
+- Target MCU: SONiX SN8F5708
+
 ## Team
 
 | Member | Role | Responsibilities |
@@ -58,3 +65,4 @@ Platform Layer
 ├── GPIO
 ├── Timer
 └── Interrupt
+
