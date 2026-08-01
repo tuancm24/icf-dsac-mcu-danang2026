@@ -1,0 +1,38 @@
+# Build output
+build/
+out/
+output/
+Debug/
+Release/
+dist/
+
+# Compiled files
+*.o
+*.obj
+*.elf
+*.bin
+*.map
+*.lst
+
+# Keep official release binaries
+*.hex
+!release/*.hex
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+*.swp
+*~
+~$*
+
+# IDE local settings
+.vscode/
+.idea/
+*.user
+*.workspace
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
