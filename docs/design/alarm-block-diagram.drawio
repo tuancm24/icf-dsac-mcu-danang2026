@@ -1,0 +1,75 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+  <diagram id="alarm-block" name="Page-1">
+    <mxGraphModel dx="1516" dy="1035" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="fsm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;strokeWidth=1.5;" value="&lt;b&gt;Application FSM / Setting Control&lt;/b&gt;&lt;br&gt;&lt;br&gt;Enter alarm setting&lt;br&gt;SW6 / SW10 edit requests&lt;br&gt;Final SW6 confirmation" vertex="1">
+          <mxGeometry height="130" width="240" x="40" y="227.5" as="geometry" />
+        </mxCell>
+        <mxCell id="integration" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;strokeWidth=1.5;" value="&lt;b&gt;&lt;i&gt;Application Integration&lt;/i&gt;&lt;/b&gt;&lt;br&gt;&lt;br&gt;alarm_edit_time&lt;br&gt;alarm_valid&lt;br&gt;one-shot / trigger control" vertex="1">
+          <mxGeometry height="155" width="235" x="380" y="215" as="geometry" />
+        </mxCell>
+        <mxCell id="alarm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;strokeWidth=1.5;" value="&lt;b&gt;ALARM CORE&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;alarm_time&lt;/b&gt;&lt;br&gt;HH:MM:00&lt;br&gt;&lt;br&gt;Alarm_Init()&lt;br&gt;Alarm_SetTime()&lt;br&gt;Alarm_GetTime()&lt;br&gt;Alarm_Check(current_time)" vertex="1">
+          <mxGeometry height="230" width="235" x="740" y="175" as="geometry" />
+        </mxCell>
+        <mxCell id="buzzer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;strokeWidth=1.5;" value="&lt;b&gt;Buzzer / Alarm Output&lt;/b&gt;&lt;br&gt;&lt;br&gt;5-second alarm sequence" vertex="1">
+          <mxGeometry height="110" width="190" x="1090" y="235" as="geometry" />
+        </mxCell>
+        <mxCell id="clock" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;strokeWidth=1.5;" value="&lt;b&gt;Clock Core&lt;/b&gt;&lt;br&gt;&lt;br&gt;Clock_GetTime()&lt;br&gt;returns current_time" vertex="1">
+          <mxGeometry height="110" width="210" x="417.5" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="eeprom" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;strokeWidth=1.5;" value="&lt;b&gt;EEPROM / Persistence&lt;/b&gt;&lt;br&gt;&lt;br&gt;alarm hour&lt;br&gt;alarm minute" vertex="1">
+          <mxGeometry height="110" width="210" x="730" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="fsm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="integration" value="setting events">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="integration" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="alarm" value="set / confirm alarm time">
+          <mxGeometry relative="1" x="0.0207" y="10" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="640" y="290" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="alarm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="buzzer" value="alarm trigger request">
+          <mxGeometry relative="1" x="0.0476" y="10" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="clock" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="integration" value="current_time">
+          <mxGeometry relative="1" x="0.125" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="523" y="480" />
+              <mxPoint x="523" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="integration" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="alarm" value="current_time / Alarm_Check(current_time)">
+          <mxGeometry relative="1" x="0.8829" y="17" as="geometry">
+            <mxPoint y="1" as="offset" />
+            <Array as="points">
+              <mxPoint x="690" y="300" />
+              <mxPoint x="690" y="450" />
+              <mxPoint x="847" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=block;startFill=1;endArrow=block;endFill=1;" value="save / load alarm settings">
+          <mxGeometry relative="1" x="0.0115" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="665" y="350" />
+              <mxPoint x="665" y="550" />
+              <mxPoint x="830" y="550" />
+            </Array>
+            <mxPoint x="615" y="350" as="sourcePoint" />
+            <mxPoint x="830" y="610" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
