@@ -51,21 +51,21 @@ Keil Simulator Verification
 | `NORMAL` | `SW3` | `SET_TIME_HOUR` | Enter current-hour setting mode | Current **HH** blinks: 0.5s ON / 0.5s OFF. **MM** remains visible | OFF | Pip 0.3s |
 | `SET_TIME_HOUR` | `SW3` | `SET_TIME_MINUTE` | Enter current-minute setting mode | Current **MM** blinks: 0.5s ON / 0.5s OFF. **HH** remains visible | OFF | Pip 0.3s |
 | `SET_TIME_MINUTE` | `SW3` | `NORMAL` | Exit current-time setting mode | Normal `HH.MM` display | OFF | Pip 0.3s |
-| `NORMAL` | `SW16` | `SET_ALARM_HOUR` | Enter alarm-hour setting mode | Alarm **HH** blinks: 0.5s ON / 0.5s OFF. Alarm **MM** remains visible | Blink: 0.5s ON / 0.5s OFF | Pip 0.3s |
+| `NORMAL` | `SW16` | `SET_ALARM_HOUR` | Enter alarm-hour setting mode; initialize temporary alarm edit value from confirmed alarm | Alarm **HH** blinks: 0.5s ON / 0.5s OFF. Alarm **MM** remains visible | Blink: 0.5s ON / 0.5s OFF | Pip 0.3s |
 | `SET_ALARM_HOUR` | `SW16` | `SET_ALARM_MINUTE` | Enter alarm-minute setting mode | Alarm **MM** blinks: 0.5s ON / 0.5s OFF. Alarm **HH** remains visible | Blink: 0.5s ON / 0.5s OFF | Pip 0.3s |
-| `SET_ALARM_MINUTE` | `SW16` | `NORMAL` | Save alarm hour/minute to EEPROM; alarm second = 0 | Return to normal `HH.MM` display | OFF | Pip 0.3s |
+| `SET_ALARM_MINUTE` | `SW16` | `NORMAL` | Confirm edited alarm hour/minute; request EEPROM save; return to normal mode | Return to normal `HH.MM` display | OFF | Pip 0.3s |
 | `SET_TIME_HOUR` | `SW6` | `SET_TIME_HOUR` | Current hour +1; wrap `23 → 00` | Updated **HH** continues blinking | OFF | Pip 0.3s |
 | `SET_TIME_HOUR` | `SW10` | `SET_TIME_HOUR` | Current hour -1; wrap `00 → 23` | Updated **HH** continues blinking | OFF | Pip 0.3s |
 | `SET_TIME_MINUTE` | `SW6` | `SET_TIME_MINUTE` | Current minute +1; wrap `59 → 00` | Updated **MM** continues blinking | OFF | Pip 0.3s |
 | `SET_TIME_MINUTE` | `SW10` | `SET_TIME_MINUTE` | Current minute -1; wrap `00 → 59` | Updated **MM** continues blinking | OFF | Pip 0.3s |
-| `SET_ALARM_HOUR` | `SW6` | `SET_ALARM_HOUR` | Alarm hour +1; wrap `23 → 00` | Updated alarm **HH** continues blinking | Blink: 0.5s ON / 0.5s OFF | Pip 0.3s |
-| `SET_ALARM_HOUR` | `SW10` | `SET_ALARM_HOUR` | Alarm hour -1; wrap `00 → 23` | Updated alarm **HH** continues blinking | Blink: 0.5s ON / 0.5s OFF | Pip 0.3s |
-| `SET_ALARM_MINUTE` | `SW6` | `SET_ALARM_MINUTE` | Alarm minute +1; wrap `59 → 00` | Updated alarm **MM** continues blinking | Blink: 0.5s ON / 0.5s OFF | Pip 0.3s |
-| `SET_ALARM_MINUTE` | `SW10` | `SET_ALARM_MINUTE` | Alarm minute -1; wrap `00 → 59` | Updated alarm **MM** continues blinking | Blink: 0.5s ON / 0.5s OFF | Pip 0.3s |
+| `SET_ALARM_HOUR` | `SW6` | `SET_ALARM_HOUR` | Temporary alarm hour +1; wrap `23 → 00` | Updated alarm **HH** continues blinking | Blink: 0.5s ON / 0.5s OFF | Pip 0.3s |
+| `SET_ALARM_HOUR` | `SW10` | `SET_ALARM_HOUR` | Temporary alarm hour -1; wrap `00 → 23` | Updated alarm **HH** continues blinking | Blink: 0.5s ON / 0.5s OFF | Pip 0.3s |
+| `SET_ALARM_MINUTE` | `SW6` | `SET_ALARM_MINUTE` | Temporary alarm minute +1; wrap `59 → 00` | Updated alarm **MM** continues blinking | Blink: 0.5s ON / 0.5s OFF | Pip 0.3s |
+| `SET_ALARM_MINUTE` | `SW10` | `SET_ALARM_MINUTE` | Temporary alarm minute -1; wrap `00 → 59` | Updated alarm **MM** continues blinking | Blink: 0.5s ON / 0.5s OFF | Pip 0.3s |
 | `SET_TIME_HOUR` | `TIMEOUT_30S` | `NORMAL` | Exit setting mode | Normal `HH.MM` display | OFF | Pip 0.3s |
 | `SET_TIME_MINUTE` | `TIMEOUT_30S` | `NORMAL` | Exit setting mode | Normal `HH.MM` display | OFF | Pip 0.3s |
-| `SET_ALARM_HOUR` | `TIMEOUT_30S` | `NORMAL` | Exit alarm setting mode | Return to normal `HH.MM` display | OFF | Pip 0.3s |
-| `SET_ALARM_MINUTE` | `TIMEOUT_30S` | `NORMAL` | Exit alarm setting mode | Return to normal `HH.MM` display | OFF | Pip 0.3s |
+| `SET_ALARM_HOUR` | `TIMEOUT_30S` | `NORMAL` | Discard temporary alarm edit; confirmed alarm remains unchanged | Return to normal `HH.MM` display | OFF | Pip 0.3s |
+| `SET_ALARM_MINUTE` | `TIMEOUT_30S` | `NORMAL` | Discard temporary alarm edit; confirmed alarm remains unchanged | Return to normal `HH.MM` display | OFF | Pip 0.3s |
 
 ---
 
@@ -90,14 +90,14 @@ Keil Simulator Verification
 
 ### `SET_ALARM_HOUR`
 
-- **7SEG:** alarm HH blinks 0.5s ON / 0.5s OFF
-- **7SEG:** alarm MM remains continuously visible
+- **7SEG:** temporary alarm HH blinks 0.5s ON / 0.5s OFF
+- **7SEG:** temporary alarm MM remains continuously visible
 - **LED D4:** blinks 0.5s ON / 0.5s OFF
 
 ### `SET_ALARM_MINUTE`
 
-- **7SEG:** alarm HH remains continuously visible
-- **7SEG:** alarm MM blinks 0.5s ON / 0.5s OFF
+- **7SEG:** temporary alarm HH remains continuously visible
+- **7SEG:** temporary alarm MM blinks 0.5s ON / 0.5s OFF
 - **LED D4:** blinks 0.5s ON / 0.5s OFF
 
 ---
@@ -137,7 +137,6 @@ SET_ALARM_HOUR ─────┼── TIMEOUT_30S ──→ NORMAL
 SET_ALARM_MINUTE ───┘
 ```
 
-
 ---
 
 ## 6. Adjustment Actions
@@ -168,6 +167,40 @@ Clock rollover behavior:
 00 - 1 → 59
 ```
 
+### Alarm Edit Buffer
+
+Alarm-setting adjustments operate on a temporary edit value owned by Application Integration.
+
+When entering alarm-setting mode:
+
+```text
+NORMAL + SW16
+→ alarm_edit_time = Alarm_GetTime()
+→ SET_ALARM_HOUR
+```
+
+Alarm edit actions:
+
+```text
+SET_ALARM_HOUR + SW6
+→ alarm_edit_time.hour +1
+→ wrap 23 → 00
+
+SET_ALARM_HOUR + SW10
+→ alarm_edit_time.hour -1
+→ wrap 00 → 23
+
+SET_ALARM_MINUTE + SW6
+→ alarm_edit_time.minute +1
+→ wrap 59 → 00
+
+SET_ALARM_MINUTE + SW10
+→ alarm_edit_time.minute -1
+→ wrap 00 → 59
+```
+
+The confirmed Alarm Core value is not modified until the final SW16 confirmation in `SET_ALARM_MINUTE`.
+
 ---
 
 ## 7. Timeout Behavior
@@ -196,6 +229,17 @@ Timeout exit behavior:
 | LED D4 | OFF |
 | Buzzer | Pip 0.3s |
 
+For alarm-setting states, the current team design uses a temporary edit buffer. On timeout:
+
+```text
+Discard alarm_edit_time
+Keep confirmed Alarm Core alarm unchanged
+Do not request EEPROM save
+Do not create a new valid alarm configuration
+```
+
+The temporary-edit behavior is a team design decision used to prevent unfinished alarm edits from becoming active.
+
 ---
 
 ## 8. Button Buzzer Behavior
@@ -208,7 +252,7 @@ This button beep is independent from the state transition logic.
 
 ## 9. Alarm Trigger Behavior
 
-When the current clock reaches the stored alarm time, the buzzer operates for 5 seconds:
+When the current clock reaches a valid stored/confirmed alarm time, the buzzer operates for 5 seconds:
 
 ```text
 0.5s ON
@@ -219,25 +263,42 @@ When the current clock reaches the stored alarm time, the buzzer operates for 5 
 Total duration: 5s
 ```
 
-This behavior belongs to Alarm/Buzzer logic and does not add another setting state to this FSM.
+Conceptually:
+
+```text
+alarm_valid == 1
+AND
+Alarm_Check(current_time) == 1
+        ↓
+Request buzzer alarm sequence
+```
+
+This behavior belongs to Alarm/Buzzer/Application Integration logic and does not add another setting state to this FSM.
+
+One-shot/re-trigger protection is also handled outside the FSM so that repeated checks during the matching second do not restart the 5-second alarm sequence.
 
 ---
 
 ## 10. EEPROM Behavior
 
-EEPROM stores:
+The required persistent alarm data consists of:
 
 - Alarm hour
 - Alarm minute
-- Alarm second = 0
+
+Alarm second is fixed to `0` by application/alarm logic.
 
 Save trigger:
 
 ```text
 SET_ALARM_MINUTE + SW16
-→ Save alarm to EEPROM
+→ Confirm alarm_edit_time through Alarm_SetTime(...)
+→ Request save of alarm hour/minute to EEPROM
+→ Mark alarm configuration valid
 → Return to NORMAL
 ```
+
+The FSM defines the save trigger and state transition. EEPROM physical access and validation belong to the EEPROM/Application Integration layer.
 
 ---
 
@@ -262,23 +323,31 @@ Current team design rule:
 
 ---
 
-## 12. Requirement Ambiguity
+## 12. Alarm Setting Entry Behavior
 
-When entering:
+The official requirement clearly specifies that `NORMAL + SW16` enters alarm-hour setting mode and causes the alarm HH digits to blink.
+
+However, the official requirement does not explicitly define the initial alarm value shown when entering alarm-setting mode.
+
+Current team design:
 
 ```text
-NORMAL
-  │
-  │ SW16
-  ▼
+NORMAL + SW16
+        ↓
+alarm_edit_time = Alarm_GetTime()
+        ↓
 SET_ALARM_HOUR
 ```
 
-the requirement clearly specifies entering alarm-hour setting mode and blinking the HH digits.
+Therefore:
 
-However, it does not explicitly define the initial alarm value shown on the 7SEG display.
+- The currently confirmed alarm value is copied into the temporary edit buffer.
+- SW6/SW10 modify only `alarm_edit_time`.
+- The confirmed Alarm Core value remains unchanged during editing.
+- `SET_ALARM_MINUTE + SW16` commits the edited value through `Alarm_SetTime(...)`.
+- A timeout discards the temporary edit and preserves the previously confirmed alarm.
 
-This behavior will be finalized during Alarm Core / EEPROM integration.
+This behavior keeps the FSM specification consistent with the Alarm Core specification and prevents unconfirmed edits from changing the active alarm.
 
 ---
 
@@ -295,6 +364,11 @@ FSM Specification
        │
        ├── Alarm Core
        │   └── firmware/app/alarm.c
+       │
+       ├── Application Integration
+       │   ├── alarm_edit_time
+       │   ├── alarm_valid
+       │   └── one-shot alarm trigger handling
        │
        ├── Display Driver
        │   └── firmware/drivers/display.c
@@ -322,15 +396,25 @@ Simulator evidence will be stored in:
 docs/testing/fsm/
 ```
 
-Planned verification:
+Current FSM-level verification covers:
 
 - Power-on state = `NORMAL`
 - SW3 state sequence
 - SW16 state sequence
-- SW6/SW10 behavior in each setting state
-- Hour rollover
-- Minute rollover
-- 30-second timeout
+- SW6/SW10 state behavior in each setting state
+- 30-second timeout transitions
 - Undefined button combinations
-- EEPROM save request
-- Display / D4 state-output mapping
+
+The existing FSM unit test verifies FSM state transitions and event handling only.
+
+The following behaviors require later Application Integration / hardware verification:
+
+- Temporary alarm-edit buffer data handling
+- Alarm hour/minute edit rollover
+- Alarm confirmation through `Alarm_SetTime(...)`
+- EEPROM save request and persistent storage
+- Display / D4 physical output behavior
+- Button buzzer pip
+- 5-second alarm buzzer sequence
+- Alarm-valid state
+- Alarm one-shot/re-trigger protection
