@@ -31,31 +31,44 @@ Test source:
 
 ## 3. Test Results Summary
 
-| Test ID | Test Case | Input / Condition | Expected Result | Status |
-|---|---|---|---|---|
-| **TEST 1** | Button Initialization | `Button_Init()` | Internal states = 0, event queue empty | PASS (Simulator) |
-| **TEST 2** | SW3 Click Detection | SW3 pin held LOW for >= 30ms | `Button_GetEvent()` returns `BUTTON_EVENT_SW3_CLICK` | PASS (Simulator) |
-| **TEST 3** | SW6 Click Detection | SW6 pin held LOW for >= 30ms | `Button_GetEvent()` returns `BUTTON_EVENT_SW6_CLICK` | PASS (Simulator) |
-| **TEST 4** | SW10 Click Detection | SW10 pin held LOW for >= 30ms | `Button_GetEvent()` returns `BUTTON_EVENT_SW10_CLICK` | PASS (Simulator) |
-| **TEST 5** | SW16 Click Detection | SW16 pin held LOW for >= 30ms | `Button_GetEvent()` returns `BUTTON_EVENT_SW16_CLICK` | PASS (Simulator) |
-| **TEST 6** | Glitch / Bounce Rejection | Noise pulse < 20ms | No click event generated (`BUTTON_EVENT_NONE`) | PASS (Simulator) |
-| **TEST 7** | Hold Re-trigger Protection | Pin held LOW indefinitely | Only 1 click event emitted until release | PASS (Simulator) |
+| Test ID | Test Case | Global Variable | Observed Value | Status |
+|---|---|---|:---:|:---:|
+| **TEST 1** | Button Initialization | `test1_init_pass` | `0x01` | **PASS** |
+| **TEST 2** | SW3 Click Detection (>=30ms) | `test2_sw3_click_pass` | `0x01` | **PASS** |
+| **TEST 3** | SW6 Click Detection (>=30ms) | `test3_sw6_click_pass` | `0x01` | **PASS** |
+| **TEST 4** | SW10 Click Detection (>=30ms) | `test4_sw10_click_pass` | `0x01` | **PASS** |
+| **TEST 5** | SW16 Click Detection (>=30ms) | `test5_sw16_click_pass` | `0x01` | **PASS** |
+| **TEST 6** | Glitch / Bounce Rejection (<20ms) | `test6_glitch_rejected` | `0x01` | **PASS** |
+| **TEST 7** | Hold Re-trigger Protection | `test7_hold_no_retrigger` | `0x01` | **PASS** |
 
 ---
 
 ## 4. Test Evidence
 
-### Software Simulation Verification
-- Test source: `firmware/drivers/button_test.c`
-- Logic verified via Keil C51 unit execution.
+### Software Simulation Verification Evidence
+The Keil C51 Simulator Watch 1 window confirms all 7/7 test assertions passed:
+
+![Button Driver Watch Window Verification](button_test_watch.png)
+
+```text
+Name                       Value     Type
+---------------------------------------------
+test1_init_pass            0x01      uchar
+test2_sw3_click_pass       0x01      uchar
+test3_sw6_click_pass       0x01      uchar
+test4_sw10_click_pass      0x01      uchar
+test5_sw16_click_pass      0x01      uchar
+test6_glitch_rejected      0x01      uchar
+test7_hold_no_retrigger    0x01      uchar
+```
 
 ### Hardware Verification Status
 - **Status:** **Pending hardware validation**
-- **Note:** Standalone hardware validation on physical matrix buttons will be conducted during system integration.
+- **Note:** Physical switch debounce on matrix hardware will be verified during full application integration.
 
 ---
 
 ## 5. Conclusion
 
-- **Software Simulator Verification:** PASS (7/7 tests logic verified)
+- **Software Simulator Verification:** **PASS (7/7 tests - 100%)**
 - **Hardware Verification:** Pending hardware validation

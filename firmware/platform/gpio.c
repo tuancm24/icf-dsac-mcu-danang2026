@@ -25,16 +25,22 @@ sbit PIN_HW_DIG3    = P5^2; /* Q3 (Minute Tens) */
 sbit PIN_HW_DIG4    = P5^3; /* Q4 (Minute Units) */
 
 /* Button Matrix Pins on Port 2 (Rows) and Port 4 (Cols) */
-sbit PIN_HW_ROW1    = P2^4; /* Row 1: SW3, SW4, SW5, SW6 */
-sbit PIN_HW_ROW2    = P2^5; /* Row 2: SW7, SW8, SW9, SW10 */
-sbit PIN_HW_ROW4    = P2^7; /* Row 4: SW16, SW15, SW17, SW18 */
-sbit PIN_HW_COL1    = P4^4; /* Col 1: SW3, SW7, SW11, SW16 */
-sbit PIN_HW_COL4    = P4^7; /* Col 4: SW6, SW10, SW14, SW18 */
+sbit PIN_HW_ROW1    = P2^4; /* Row 1: SW3, SW6 */
+sbit PIN_HW_ROW2    = P2^5; /* Row 2: SW10 */
+sbit PIN_HW_ROW4    = P2^7; /* Row 4: SW16 */
+sbit PIN_HW_COL1    = P4^4; /* Col 1: SW3, SW16 */
+sbit PIN_HW_COL4    = P4^7; /* Col 4: SW6, SW10 */
 
 static unsigned char s_buzzer_state = 0;
 static unsigned char s_led_d4_state = 0;
 static unsigned char s_display_segments = 0;
 static unsigned char s_active_digit = 0xFF;
+
+/* Simulation State Flags */
+static unsigned char s_sim_sw3_pressed = 0;
+static unsigned char s_sim_sw6_pressed = 0;
+static unsigned char s_sim_sw10_pressed = 0;
+static unsigned char s_sim_sw16_pressed = 0;
 
 void GPIO_Init(void)
 {
@@ -62,6 +68,12 @@ void GPIO_Init(void)
     /* Enable pull-ups / High level on input columns */
     PIN_HW_COL1 = 1;
     PIN_HW_COL4 = 1;
+
+    /* Reset simulation flags */
+    s_sim_sw3_pressed = 0;
+    s_sim_sw6_pressed = 0;
+    s_sim_sw10_pressed = 0;
+    s_sim_sw16_pressed = 0;
 
     /* Set default inactive states for outputs */
     GPIO_SetBuzzer(PIN_STATE_LOW);
@@ -97,18 +109,18 @@ void GPIO_SelectDisplayDigit(unsigned char digit_index)
 {
     s_active_digit = digit_index;
 
-    /* Turn OFF all digits first (Active LOW on Port 5) */
-    PIN_HW_DIG1 = 1;
-    PIN_HW_DIG2 = 1;
-    PIN_HW_DIG3 = 1;
-    PIN_HW_DIG4 = 1;
+    /* Turn OFF all digits first (NPN Base LOW = 0) */
+    PIN_HW_DIG1 = 0;
+    PIN_HW_DIG2 = 0;
+    PIN_HW_DIG3 = 0;
+    PIN_HW_DIG4 = 0;
 
     switch (digit_index)
     {
-        case 0: PIN_HW_DIG1 = 0; break;
-        case 1: PIN_HW_DIG2 = 0; break;
-        case 2: PIN_HW_DIG3 = 0; break;
-        case 3: PIN_HW_DIG4 = 0; break;
+        case 0: PIN_HW_DIG1 = 1; break; /* Q1 ON (Hour Tens) */
+        case 1: PIN_HW_DIG2 = 1; break; /* Q2 ON (Hour Units) */
+        case 2: PIN_HW_DIG3 = 1; break; /* Q3 ON (Minute Tens) */
+        case 3: PIN_HW_DIG4 = 1; break; /* Q4 ON (Minute Units) */
         default: break;
     }
 }
@@ -122,14 +134,16 @@ void GPIO_SelectDisplayDigit(unsigned char digit_index)
 Pin_State_t GPIO_ReadButton_SW3(void)
 {
     Pin_State_t state;
-    /* Ensure all other rows are inactive */
+    if (s_sim_sw3_pressed)
+    {
+        return PIN_STATE_LOW;
+    }
+
     PIN_HW_ROW2 = 1;
     PIN_HW_ROW4 = 1;
-
-    /* Activate Row 1 (SW3, SW6) */
     PIN_HW_ROW1 = 0;
     state = (PIN_HW_COL1 == 0) ? PIN_STATE_LOW : PIN_STATE_HIGH;
-    PIN_HW_ROW1 = 1; /* Restore Row 1 to inactive HIGH */
+    PIN_HW_ROW1 = 1;
 
     return state;
 }
@@ -137,13 +151,16 @@ Pin_State_t GPIO_ReadButton_SW3(void)
 Pin_State_t GPIO_ReadButton_SW6(void)
 {
     Pin_State_t state;
+    if (s_sim_sw6_pressed)
+    {
+        return PIN_STATE_LOW;
+    }
+
     PIN_HW_ROW2 = 1;
     PIN_HW_ROW4 = 1;
-
-    /* Activate Row 1 (SW3, SW6) */
     PIN_HW_ROW1 = 0;
     state = (PIN_HW_COL4 == 0) ? PIN_STATE_LOW : PIN_STATE_HIGH;
-    PIN_HW_ROW1 = 1; /* Restore Row 1 */
+    PIN_HW_ROW1 = 1;
 
     return state;
 }
@@ -151,13 +168,16 @@ Pin_State_t GPIO_ReadButton_SW6(void)
 Pin_State_t GPIO_ReadButton_SW10(void)
 {
     Pin_State_t state;
+    if (s_sim_sw10_pressed)
+    {
+        return PIN_STATE_LOW;
+    }
+
     PIN_HW_ROW1 = 1;
     PIN_HW_ROW4 = 1;
-
-    /* Activate Row 2 (SW10) */
     PIN_HW_ROW2 = 0;
     state = (PIN_HW_COL4 == 0) ? PIN_STATE_LOW : PIN_STATE_HIGH;
-    PIN_HW_ROW2 = 1; /* Restore Row 2 */
+    PIN_HW_ROW2 = 1;
 
     return state;
 }
@@ -165,15 +185,30 @@ Pin_State_t GPIO_ReadButton_SW10(void)
 Pin_State_t GPIO_ReadButton_SW16(void)
 {
     Pin_State_t state;
+    if (s_sim_sw16_pressed)
+    {
+        return PIN_STATE_LOW;
+    }
+
     PIN_HW_ROW1 = 1;
     PIN_HW_ROW2 = 1;
-
-    /* Activate Row 4 (SW16) */
     PIN_HW_ROW4 = 0;
     state = (PIN_HW_COL1 == 0) ? PIN_STATE_LOW : PIN_STATE_HIGH;
-    PIN_HW_ROW4 = 1; /* Restore Row 4 */
+    PIN_HW_ROW4 = 1;
 
     return state;
+}
+
+void GPIO_SimulateButtonPress(unsigned char button_id, unsigned char is_pressed)
+{
+    switch (button_id)
+    {
+        case 0: s_sim_sw3_pressed = is_pressed; break;
+        case 1: s_sim_sw6_pressed = is_pressed; break;
+        case 2: s_sim_sw10_pressed = is_pressed; break;
+        case 3: s_sim_sw16_pressed = is_pressed; break;
+        default: break;
+    }
 }
 
 /* =========================================================================

@@ -26,27 +26,38 @@ Test source:
 - **IDE:** Keil µVision
 - **Compiler:** Keil C51
 - **EEPROM Device:** 24C08 (I2C address: `0xA0`)
-- **Verification Method:** Keil Simulator / I2C Bus Monitor
+- **Verification Method:** Keil Simulator / Watch Window
 
 ---
 
 ## 3. Test Results Summary
 
-| Test ID | Test Case | Input / Condition | Expected Result | Status |
-|---|---|---|---|---|
-| **TEST 1** | Save Alarm Time | `EEPROM_SaveAlarm(7, 30)` | Byte 0x00=7, Byte 0x01=30, Byte 0x02=0xA5 | PASS (Simulator) |
-| **TEST 2** | Read Saved Alarm | `EEPROM_ReadAlarm(&h, &m)` | `h=7`, `m=30`, returns `1` (Valid) | PASS (Simulator) |
-| **TEST 3** | Boundary Save & Restore | `EEPROM_SaveAlarm(23, 59)` | `h=23`, `m=59`, returns `1` | PASS (Simulator) |
-| **TEST 4** | Uninitialized Memory Check | Magic Byte != `0xA5` | `EEPROM_ReadAlarm()` returns `0` (Invalid) | PASS (Simulator) |
-| **TEST 5** | Out-of-Range Rejection | `EEPROM_SaveAlarm(25, 60)` | Rejected immediately, returns `0` | PASS (Simulator) |
+| Test ID | Test Case | Global Variable | Observed Value | Status |
+|---|---|---|:---:|:---:|
+| **TEST 1** | Save Alarm Time (7:30) | `test1_save_alarm_pass` | `0x01` | **PASS** |
+| **TEST 2** | Read Saved Alarm | `test2_read_alarm_pass` | `0x01` | **PASS** |
+| **TEST 3** | Boundary Save & Restore (23:59) | `test3_boundary_pass` | `0x01` | **PASS** |
+| **TEST 4** | Uninitialized Memory Check (Magic Byte 0xA5) | `test4_magic_byte_reject_pass` | `0x01` | **PASS** |
+| **TEST 5** | Out-of-Range Rejection (hour=25, min=60) | `test5_out_of_range_reject_pass` | `0x01` | **PASS** |
 
 ---
 
 ## 4. Test Evidence
 
-### Software Simulation Verification
-- Test source: `firmware/drivers/eeprom_test.c`
-- Input parameter bounds checking and byte map handling verified via Keil C51 simulation.
+### Software Simulation Verification Evidence
+The Keil C51 Simulator Watch 1 window confirms all 5/5 test assertions passed:
+
+![EEPROM Driver Watch Window Verification](eeprom_test_watch.png)
+
+```text
+Name                                Value     Type
+------------------------------------------------------
+test1_save_alarm_pass               0x01      uchar
+test2_read_alarm_pass               0x01      uchar
+test3_boundary_pass                 0x01      uchar
+test4_magic_byte_reject_pass        0x01      uchar
+test5_out_of_range_reject_pass      0x01      uchar
+```
 
 ### Hardware Verification Status
 - **Status:** **Pending hardware validation**
@@ -56,5 +67,5 @@ Test source:
 
 ## 5. Conclusion
 
-- **Software Simulator Verification:** PASS (5/5 tests logic verified)
+- **Software Simulator Verification:** **PASS (5/5 tests - 100%)**
 - **Hardware Verification:** Pending hardware validation

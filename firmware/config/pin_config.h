@@ -26,11 +26,11 @@
 #define BUZZER_ACTIVE_LEVEL             (1)     /* Active HIGH: 1 = ON, 0 = OFF */
 
 /* -------------------------------------------------------------------------
- * 3. 4-Digit 7-Segment Display (SMG1 - 3461AS)
- *    - Segments (a..dp): Port 3 (P3.0 -> P3.7)
- *    - Digits (DIG1..DIG4): Q1..Q4 (P5.0 -> P5.3)
+ * 3. 4-Digit 7-Segment Display (SMG1 - 3461AS Common Cathode)
+ *    - Segments (a..dp): Port 3 (P3.0 -> P3.7, Active HIGH)
+ *    - Digits (DIG1..DIG4): Q1..Q4 NPN BJTs (P5.0 -> P5.3, Active HIGH)
  * ------------------------------------------------------------------------- */
-#define DISPLAY_COMMON_ANODE            (1)
+#define DISPLAY_COMMON_ANODE            (0)     /* 3461AS is Common Cathode */
 
 #define PIN_SEG_PORT                    (3)     /* P3.0=a, P3.1=b, P3.2=c, P3.3=d, P3.4=e, P3.5=f, P3.6=g, P3.7=dp */
 #define PIN_DIG1_BIT                    (0)     /* P5.0 (Q1: Hour Tens) */

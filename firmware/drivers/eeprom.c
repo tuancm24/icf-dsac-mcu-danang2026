@@ -1,14 +1,24 @@
 #include "eeprom.h"
 #include "i2c.h"
 #include "timer.h"
+#include "pin_config.h"
+#include "app_config.h"
 
 /* =========================================================================
- * EEPROM Driver Implementation (24C02 / 24Cxx on SONiX SN8F5708 EVK)
+ * EEPROM Driver Implementation (24C08 on SONiX SN8F5708 EVK)
  * ========================================================================= */
 
-#define EEPROM_DEV_ADDR_WRITE   (EEPROM_I2C_DEV_ADDR & 0xFE)
-#define EEPROM_DEV_ADDR_READ    (EEPROM_I2C_DEV_ADDR | 0x01)
-#define EEPROM_WRITE_DELAY_MS   (10)
+#ifndef EEPROM_I2C_DEV_ADDR
+#define EEPROM_I2C_DEV_ADDR         (0xA0)
+#endif
+
+#ifndef EEPROM_MAGIC_VALUE
+#define EEPROM_MAGIC_VALUE          (0xA5)
+#endif
+
+#define EEPROM_DEV_ADDR_WRITE       (EEPROM_I2C_DEV_ADDR & 0xFE)
+#define EEPROM_DEV_ADDR_READ        (EEPROM_I2C_DEV_ADDR | 0x01)
+#define EEPROM_WRITE_DELAY_MS       (10)
 
 static unsigned char EEPROM_WriteByte(unsigned char mem_addr, unsigned char data_val)
 {
@@ -58,9 +68,9 @@ static unsigned char EEPROM_ReadByte(unsigned char mem_addr, unsigned char *data
         {
             ok = 0;
         }
-        else
+        if (ok)
         {
-            *data_out = I2C_ReadByte(0); /* Read 1 byte with NACK */
+            *data_out = I2C_ReadByte(0); /* NACK after single byte read */
         }
     }
     I2C_Stop();
@@ -77,22 +87,17 @@ unsigned char EEPROM_SaveAlarm(unsigned char hour, unsigned char minute)
 {
     if (hour > 23 || minute > 59)
     {
-        return 0;
+        return 0; /* Reject invalid time bounds */
     }
 
-    /* 1. Save Hour */
     if (!EEPROM_WriteByte(EEPROM_ADDR_ALARM_HOUR, hour))
     {
         return 0;
     }
-
-    /* 2. Save Minute */
     if (!EEPROM_WriteByte(EEPROM_ADDR_ALARM_MINUTE, minute))
     {
         return 0;
     }
-
-    /* 3. Save Magic Byte to validate data persistence */
     if (!EEPROM_WriteByte(EEPROM_ADDR_MAGIC_BYTE, EEPROM_MAGIC_VALUE))
     {
         return 0;
@@ -107,35 +112,37 @@ unsigned char EEPROM_ReadAlarm(unsigned char *hour, unsigned char *minute)
     unsigned char h = 0;
     unsigned char m = 0;
 
-    if (hour == 0 || minute == 0)
+    if (!hour || !minute)
     {
         return 0;
     }
 
-    /* 1. Check Magic Byte */
+    /* Check magic byte first to verify validity */
     if (!EEPROM_ReadByte(EEPROM_ADDR_MAGIC_BYTE, &magic))
     {
         return 0;
     }
     if (magic != EEPROM_MAGIC_VALUE)
     {
-        return 0; /* EEPROM has no valid configured alarm */
+        return 0; /* Uninitialized / corrupted EEPROM data */
     }
 
-    /* 2. Read Hour & Minute */
-    if (!EEPROM_ReadByte(EEPROM_ADDR_ALARM_HOUR, &h) ||
-        !EEPROM_ReadByte(EEPROM_ADDR_ALARM_MINUTE, &m))
+    if (!EEPROM_ReadByte(EEPROM_ADDR_ALARM_HOUR, &h))
+    {
+        return 0;
+    }
+    if (!EEPROM_ReadByte(EEPROM_ADDR_ALARM_MINUTE, &m))
     {
         return 0;
     }
 
-    /* 3. Validate Range */
-    if (h <= 23 && m <= 59)
+    if (h > 23 || m > 59)
     {
-        *hour = h;
-        *minute = m;
-        return 1;
+        return 0;
     }
 
-    return 0;
+    *hour = h;
+    *minute = m;
+
+    return 1;
 }

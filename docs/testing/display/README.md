@@ -24,29 +24,41 @@ Test source:
 - **Target MCU:** SONiX SN8F5708
 - **IDE:** Keil µVision
 - **Compiler:** Keil C51
-- **Verification Method:** Keil Simulator / Port Watch Window
+- **Verification Method:** Keil Simulator / Watch Window
 - **Multiplexing Rate:** 2ms per digit (125Hz full frame refresh rate)
 
 ---
 
 ## 3. Test Results Summary
 
-| Test ID | Test Case | Input / Condition | Expected Result | Status |
-|---|---|---|---|---|
-| **TEST 1** | Display Initialization | `Display_Init()` | All digits OFF, segment buffer clear | PASS (Simulator) |
-| **TEST 2** | Normal Time Display | `Display_SetTime(12, 34)` | Digits decode: `1`, `2.`, `3`, `4` | PASS (Simulator) |
-| **TEST 3** | Boundary Display (00:00 & 23:59) | `Display_SetTime(0, 0)`, `(23, 59)` | Correct digit segments rendered | PASS (Simulator) |
-| **TEST 4** | Hours Blinking Mode | `Display_SetBlinkMode(DISPLAY_BLINK_HOURS)` | `HH` blanks during OFF phase; `MM` steady | PASS (Simulator) |
-| **TEST 5** | Minutes Blinking Mode | `Display_SetBlinkMode(DISPLAY_BLINK_MINUTES)` | `MM` blanks during OFF phase; `HH` steady | PASS (Simulator) |
-| **TEST 6** | Colon / DP Control | `Display_SetColon(1)` vs `(0)` | Segment DP bit toggles on Digit 1 | PASS (Simulator) |
+| Test ID | Test Case | Global Variable | Observed Value | Status |
+|---|---|---|:---:|:---:|
+| **TEST 1** | Display Initialization | `test1_init_pass` | `0x01` | **PASS** |
+| **TEST 2** | Normal Time Display (12:34) | `test2_normal_time_pass` | `0x01` | **PASS** |
+| **TEST 3** | Boundary Display (00:00 & 23:59) | `test3_boundary_display_pass` | `0x01` | **PASS** |
+| **TEST 4** | Hours Blinking Mode | `test4_blink_hours_pass` | `0x01` | **PASS** |
+| **TEST 5** | Minutes Blinking Mode | `test5_blink_minutes_pass` | `0x01` | **PASS** |
+| **TEST 6** | Colon / DP Control | `test6_colon_control_pass` | `0x01` | **PASS** |
 
 ---
 
 ## 4. Test Evidence
 
-### Software Simulation Verification
-- Test source: `firmware/drivers/display_test.c`
-- Segment font mapping and multiplexing sequence verified via Keil C51 simulation.
+### Software Simulation Verification Evidence
+The Keil C51 Simulator Watch 1 window confirms all 6/6 test assertions passed:
+
+![Display Driver Watch Window Verification](display_test_watch.png)
+
+```text
+Name                           Value     Type
+-------------------------------------------------
+test1_init_pass                0x01      uchar
+test2_normal_time_pass         0x01      uchar
+test3_boundary_display_pass    0x01      uchar
+test4_blink_hours_pass         0x01      uchar
+test5_blink_minutes_pass       0x01      uchar
+test6_colon_control_pass       0x01      uchar
+```
 
 ### Hardware Verification Status
 - **Status:** **Pending hardware validation**
@@ -56,5 +68,5 @@ Test source:
 
 ## 5. Conclusion
 
-- **Software Simulator Verification:** PASS (6/6 tests logic verified)
+- **Software Simulator Verification:** **PASS (6/6 tests - 100%)**
 - **Hardware Verification:** Pending hardware validation

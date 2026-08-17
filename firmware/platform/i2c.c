@@ -15,7 +15,7 @@ static void I2C_Delay(void)
 
 void I2C_Init(void)
 {
-    GPIO_SetI2C_SDA_Mode(PIN_MODE_OUTPUT_OPENDRAIN);
+    GPIO_SetI2C_SDA_Mode(PIN_MODE_OUTPUT_OD);
     GPIO_SetI2C_SCL(PIN_STATE_HIGH);
     GPIO_SetI2C_SDA(PIN_STATE_HIGH);
     I2C_Delay();
@@ -23,6 +23,7 @@ void I2C_Init(void)
 
 void I2C_Start(void)
 {
+    GPIO_SetI2C_SDA_Mode(PIN_MODE_OUTPUT_OD);
     GPIO_SetI2C_SDA(PIN_STATE_HIGH);
     GPIO_SetI2C_SCL(PIN_STATE_HIGH);
     I2C_Delay();
@@ -34,6 +35,7 @@ void I2C_Start(void)
 
 void I2C_Stop(void)
 {
+    GPIO_SetI2C_SDA_Mode(PIN_MODE_OUTPUT_OD);
     GPIO_SetI2C_SDA(PIN_STATE_LOW);
     GPIO_SetI2C_SCL(PIN_STATE_LOW);
     I2C_Delay();
@@ -48,6 +50,8 @@ unsigned char I2C_WriteByte(unsigned char data_byte)
     unsigned char i;
     unsigned char ack;
 
+    GPIO_SetI2C_SDA_Mode(PIN_MODE_OUTPUT_OD);
+
     for (i = 0; i < 8; i++)
     {
         if (data_byte & 0x80)
@@ -58,26 +62,21 @@ unsigned char I2C_WriteByte(unsigned char data_byte)
         {
             GPIO_SetI2C_SDA(PIN_STATE_LOW);
         }
-        data_byte <<= 1;
         I2C_Delay();
         GPIO_SetI2C_SCL(PIN_STATE_HIGH);
         I2C_Delay();
         GPIO_SetI2C_SCL(PIN_STATE_LOW);
-        I2C_Delay();
+        data_byte <<= 1;
     }
 
     /* Read ACK */
-    GPIO_SetI2C_SDA(PIN_STATE_HIGH);
     GPIO_SetI2C_SDA_Mode(PIN_MODE_INPUT_PULLUP);
     I2C_Delay();
     GPIO_SetI2C_SCL(PIN_STATE_HIGH);
     I2C_Delay();
-
     ack = (GPIO_ReadI2C_SDA() == PIN_STATE_LOW) ? 1 : 0;
-
     GPIO_SetI2C_SCL(PIN_STATE_LOW);
-    GPIO_SetI2C_SDA_Mode(PIN_MODE_OUTPUT_OPENDRAIN);
-    I2C_Delay();
+    GPIO_SetI2C_SDA_Mode(PIN_MODE_OUTPUT_OD);
 
     return ack;
 }
@@ -87,7 +86,6 @@ unsigned char I2C_ReadByte(unsigned char send_ack)
     unsigned char i;
     unsigned char data_byte = 0;
 
-    GPIO_SetI2C_SDA(PIN_STATE_HIGH);
     GPIO_SetI2C_SDA_Mode(PIN_MODE_INPUT_PULLUP);
 
     for (i = 0; i < 8; i++)
@@ -103,11 +101,11 @@ unsigned char I2C_ReadByte(unsigned char send_ack)
         I2C_Delay();
     }
 
-    /* Send ACK/NACK */
-    GPIO_SetI2C_SDA_Mode(PIN_MODE_OUTPUT_OPENDRAIN);
+    /* Send ACK / NACK */
+    GPIO_SetI2C_SDA_Mode(PIN_MODE_OUTPUT_OD);
     if (send_ack)
     {
-        GPIO_SetI2C_SDA(PIN_STATE_LOW);  /* ACK */
+        GPIO_SetI2C_SDA(PIN_STATE_LOW); /* ACK */
     }
     else
     {
@@ -118,7 +116,6 @@ unsigned char I2C_ReadByte(unsigned char send_ack)
     I2C_Delay();
     GPIO_SetI2C_SCL(PIN_STATE_LOW);
     GPIO_SetI2C_SDA(PIN_STATE_HIGH);
-    I2C_Delay();
 
     return data_byte;
 }
