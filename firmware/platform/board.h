@@ -8,10 +8,14 @@
 #include "i2c.h"
 
 /* =========================================================================
- * Platform Board Initialization Interface (SONiX SN8F5708)
+ * Platform Board Interface (SONiX SN8F5708 EVK)
+ * Master Hardware Initializer & Watchdog Abstraction
  * ========================================================================= */
 
-/* Initialize all hardware platform peripherals (Clock, GPIO, Timer, I2C) */
+/* Master platform hardware initializer (GPIO, Timer 1ms ISR, I2C Bus) */
 void Board_Init(void);
+
+/* Frozen Watchdog Feed abstraction (Platform-owned WDT clear) */
+void Board_FeedWatchdog(void);
 
 #endif /* BOARD_H */

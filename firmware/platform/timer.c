@@ -39,12 +39,20 @@ void Timer_Init(void)
 
 unsigned long Timer_GetTickMs(void)
 {
-    return s_system_tick_ms;
+    unsigned long tick;
+    unsigned char ea_state = IE_REG & 0x80; /* Save previous interrupt state (EA) */
+
+    IE_REG &= ~0x80; /* Mask global interrupt temporarily to avoid torn 32-bit read */
+    tick = s_system_tick_ms;
+    IE_REG |= ea_state; /* Restore previous interrupt state */
+
+    return tick;
 }
 
 unsigned char Timer_HasElapsed(unsigned long start_tick, unsigned long duration_ms)
 {
-    return ((s_system_tick_ms - start_tick) >= duration_ms) ? 1 : 0;
+    unsigned long now = Timer_GetTickMs();
+    return ((now - start_tick) >= duration_ms) ? 1 : 0;
 }
 
 void Timer_ISR_Handler(void)
@@ -67,7 +75,7 @@ void Timer_DelayUs(unsigned int us)
     {
         for (i = 0; i < 4; i++)
         {
-            /* Calibrated loop for microsecond delay */
+            /* Calibrated loop for microsecond delay at 12MHz */
         }
     }
 }

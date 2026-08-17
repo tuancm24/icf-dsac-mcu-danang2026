@@ -6,6 +6,7 @@
 
 /* =========================================================================
  * EEPROM Driver Implementation (24C08 on SONiX SN8F5708 EVK)
+ * Transaction-Safe Persistence (IMP-EEP-01 / Contract v2.7)
  * ========================================================================= */
 
 #ifndef EEPROM_I2C_DEV_ADDR
@@ -85,19 +86,31 @@ void EEPROM_Init(void)
 
 unsigned char EEPROM_SaveAlarm(unsigned char hour, unsigned char minute)
 {
+    /* Reject invalid time bounds */
     if (hour > 23 || minute > 59)
     {
-        return 0; /* Reject invalid time bounds */
+        return 0;
     }
 
+    /* Step 1: Invalidate existing magic marker first (prevents corrupted read if power is lost) */
+    if (!EEPROM_WriteByte(EEPROM_ADDR_MAGIC_BYTE, 0x00))
+    {
+        return 0;
+    }
+
+    /* Step 2: Write hour */
     if (!EEPROM_WriteByte(EEPROM_ADDR_ALARM_HOUR, hour))
     {
         return 0;
     }
+
+    /* Step 3: Write minute */
     if (!EEPROM_WriteByte(EEPROM_ADDR_ALARM_MINUTE, minute))
     {
         return 0;
     }
+
+    /* Step 4: Write valid magic marker (0xA5) last */
     if (!EEPROM_WriteByte(EEPROM_ADDR_MAGIC_BYTE, EEPROM_MAGIC_VALUE))
     {
         return 0;

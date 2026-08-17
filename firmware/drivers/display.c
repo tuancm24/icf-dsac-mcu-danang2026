@@ -4,7 +4,7 @@
 
 /* =========================================================================
  * 4-Digit 7-Segment Display Driver Implementation (SONiX SN8F5708 EVK)
- * Time Multiplexing & Segment Decoding
+ * Time Multiplexing & Segment Decoding (Contract v2.7)
  * ========================================================================= */
 
 /* 7-Segment Font Table (0-9): Bit 0=A, 1=B, 2=C, 3=D, 4=E, 5=F, 6=G, 7=DP */
@@ -26,7 +26,7 @@ static unsigned char s_digits[4] = {0, 0, 0, 0};
 static unsigned char s_colon_enabled = 1;
 static Display_BlinkMode_t s_blink_mode = DISPLAY_BLINK_NONE;
 static unsigned char s_blink_phase = 1; /* 1 = Visible (ON), 0 = Hidden (OFF) */
-static unsigned long s_last_blink_tick = 0;
+static unsigned long s_mode_start_tick = 0;
 static unsigned char s_scan_index = 0;
 
 void Display_Init(void)
@@ -38,7 +38,7 @@ void Display_Init(void)
     s_colon_enabled = 1;
     s_blink_mode = DISPLAY_BLINK_NONE;
     s_blink_phase = 1;
-    s_last_blink_tick = 0;
+    s_mode_start_tick = 0;
     s_scan_index = 0;
 
     GPIO_SelectDisplayDigit(0xFF);
@@ -67,7 +67,7 @@ void Display_SetBlinkMode(Display_BlinkMode_t mode)
     {
         s_blink_mode = mode;
         s_blink_phase = 1; /* Reset phase to visible immediately */
-        s_last_blink_tick = Timer_GetTickMs();
+        s_mode_start_tick = Timer_GetTickMs();
     }
 }
 
@@ -77,11 +77,9 @@ void Display_UpdateBlinkState(void)
 
     if (s_blink_mode != DISPLAY_BLINK_NONE)
     {
-        if (Timer_HasElapsed(s_last_blink_tick, BLINK_HALF_PERIOD_MS))
-        {
-            s_last_blink_tick = current_tick;
-            s_blink_phase = !s_blink_phase;
-        }
+        unsigned long elapsed = current_tick - s_mode_start_tick;
+        /* TIM-12: Drift-free 500ms phase calculation */
+        s_blink_phase = ((elapsed / BLINK_HALF_PERIOD_MS) % 2 == 0) ? 1 : 0;
     }
     else
     {
@@ -140,7 +138,7 @@ void Display_ScanRoutine(void)
 #if DISPLAY_COMMON_ANODE
     GPIO_SetDisplaySegments(~seg_data); /* Invert for Common Anode */
 #else
-    GPIO_SetDisplaySegments(seg_data);  /* Direct for Common Cathode */
+    GPIO_SetDisplaySegments(seg_data);  /* Direct for Common Cathode (3461AS) */
 #endif
 
     /* 5. Activate current digit */
