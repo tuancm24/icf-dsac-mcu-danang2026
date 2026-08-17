@@ -14,6 +14,9 @@ Module under test:
 - `firmware/drivers/display.c`
 - `firmware/drivers/display.h`
 
+Test source:
+- `firmware/drivers/display_test.c`
+
 ---
 
 ## 2. Test Environment
@@ -30,49 +33,28 @@ Module under test:
 
 | Test ID | Test Case | Input / Condition | Expected Result | Status |
 |---|---|---|---|---|
-| **TEST 1** | Display Initialization | `Display_Init()` | All digits OFF, segment buffer clear | PASS |
-| **TEST 2** | Normal Time Display | `Display_SetTime(12, 34)` | Digits decode: `1`, `2.`, `3`, `4` | PASS |
-| **TEST 3** | Boundary Display (00:00 & 23:59) | `Display_SetTime(0, 0)`, `(23, 59)` | Correct digit segments rendered | PASS |
-| **TEST 4** | Hours Blinking Mode | `Display_SetBlinkMode(DISPLAY_BLINK_HOURS)` | `HH` blanks during OFF phase; `MM` steady | PASS |
-| **TEST 5** | Minutes Blinking Mode | `Display_SetBlinkMode(DISPLAY_BLINK_MINUTES)` | `MM` blanks during OFF phase; `HH` steady | PASS |
-| **TEST 6** | Colon / DP Control | `Display_SetColon(1)` vs `(0)` | Segment DP bit toggles on Digit 1 | PASS |
+| **TEST 1** | Display Initialization | `Display_Init()` | All digits OFF, segment buffer clear | PASS (Simulator) |
+| **TEST 2** | Normal Time Display | `Display_SetTime(12, 34)` | Digits decode: `1`, `2.`, `3`, `4` | PASS (Simulator) |
+| **TEST 3** | Boundary Display (00:00 & 23:59) | `Display_SetTime(0, 0)`, `(23, 59)` | Correct digit segments rendered | PASS (Simulator) |
+| **TEST 4** | Hours Blinking Mode | `Display_SetBlinkMode(DISPLAY_BLINK_HOURS)` | `HH` blanks during OFF phase; `MM` steady | PASS (Simulator) |
+| **TEST 5** | Minutes Blinking Mode | `Display_SetBlinkMode(DISPLAY_BLINK_MINUTES)` | `MM` blanks during OFF phase; `HH` steady | PASS (Simulator) |
+| **TEST 6** | Colon / DP Control | `Display_SetColon(1)` vs `(0)` | Segment DP bit toggles on Digit 1 | PASS (Simulator) |
 
 ---
 
 ## 4. Test Evidence
 
-### TEST 1 - Initialization & All Digits Off
-Expected: Digit select = `0xFF` (all off), Segments = `0x00`.
-*(Place evidence screenshot below)*
-<!-- ![TEST 1 - Display Initialization](display_test_01_init.png) -->
+### Software Simulation Verification
+- Test source: `firmware/drivers/display_test.c`
+- Segment font mapping and multiplexing sequence verified via Keil C51 simulation.
 
----
-
-### TEST 2 & 3 - Time Decoding & Normal Mode Rendering
-Expected: Valid segment map for hours and minutes.
-*(Place evidence screenshot below)*
-<!-- ![TEST 2 - Time Display](display_test_02_normal_time.png) -->
-
----
-
-### TEST 4 - Hours Blinking Verification (0.5s ON / 0.5s OFF)
-Expected: During OFF phase, digits 0 & 1 output blank segments; digits 2 & 3 remain normal.
-*(Place evidence screenshot below)*
-<!-- ![TEST 4 - Hours Blinking](display_test_04_blink_hours.png) -->
-
----
-
-### TEST 5 - Minutes Blinking Verification (0.5s ON / 0.5s OFF)
-Expected: During OFF phase, digits 2 & 3 output blank segments; digits 0 & 1 remain normal.
-*(Place evidence screenshot below)*
-<!-- ![TEST 5 - Minutes Blinking](display_test_05_blink_minutes.png) -->
+### Hardware Verification Status
+- **Status:** **Pending hardware validation**
+- **Note:** Multiplexed physical 7-segment display rendering on board will be verified during application integration.
 
 ---
 
 ## 5. Conclusion
 
-All 7-segment display driver test cases passed successfully.
-
-- **Result:** 6/6 tests PASS
-- **Multiplexing Integrity:** Ghosting prevention verified via inter-digit blanking.
-- **Blink Compliance:** 1s period (500ms ON / 500ms OFF) verified.
+- **Software Simulator Verification:** PASS (6/6 tests logic verified)
+- **Hardware Verification:** Pending hardware validation

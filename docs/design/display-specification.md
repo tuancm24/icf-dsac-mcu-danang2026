@@ -148,7 +148,8 @@ Verified via Keil C51 Simulator:
 
 ## 11. Hardware Verification Status
 
-> Hardware verification has not yet been performed because the SN8F5708 EVK is currently unavailable for individual testing. Current verification is limited to software/simulator-level behavior.
+- **Status:** **Pending hardware validation**
+- **Note:** Multiplexed physical 7-segment display rendering on board will be verified during application integration.
 
 ---
 

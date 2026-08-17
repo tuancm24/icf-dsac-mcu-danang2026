@@ -131,7 +131,8 @@ Verified via Keil C51 Simulator:
 
 ## 11. Hardware Verification Status
 
-> Hardware verification has not yet been performed because the SN8F5708 EVK is currently unavailable for individual testing. Current verification is limited to software/simulator-level behavior.
+- **Status:** **Pending hardware validation**
+- **Note:** Physical I2C EEPROM (24C08) write cycle and data retention verification on board will be conducted during application integration.
 
 ---
 

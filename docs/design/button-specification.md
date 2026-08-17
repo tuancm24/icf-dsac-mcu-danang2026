@@ -162,7 +162,8 @@ Software verification is executed in Keil C51 Simulator using `firmware/drivers/
 
 ## 11. Hardware Verification Status
 
-> Hardware verification has not yet been performed because the SN8F5708 EVK is currently unavailable for individual testing. Current verification is limited to software/simulator-level behavior.
+- **Status:** **Pending hardware validation**
+- **Note:** Standalone hardware validation on physical matrix buttons will be conducted during system integration.
 
 ---
 

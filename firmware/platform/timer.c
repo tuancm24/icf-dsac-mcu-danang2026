@@ -3,7 +3,7 @@
 
 /* =========================================================================
  * Platform Timer Implementation for SONiX SN8F5708 EVK
- * Standard 8051 SFR Definitions
+ * Standard 8051 SFR Definitions & 1ms Periodic Interrupt
  * ========================================================================= */
 
 sfr TCON_REG = 0x88; /* Timer Control Register */
@@ -21,14 +21,14 @@ void Timer_Init(void)
     /*
      * Hardware Timer 0 Configuration on SN8F5708:
      * - TMOD: Timer 0 Mode 1 (16-bit Timer)
-     * - Reload value: TH0 = 0xFC, TL0 = 0x66 (1ms at standard clock)
+     * - Reload value: computed dynamically from FOSC in board_config.h
      * - IE Register (0xA8): Bit 7 = Global Interrupt Enable (EA), Bit 1 = Timer 0 Enable (ET0)
      * - TCON Register (0x88): Bit 4 = Timer 0 Run Control (TR0)
      */
     TMOD_REG &= 0xF0;
     TMOD_REG |= 0x01; /* Timer 0 Mode 1 (16-bit) */
-    TH0_REG   = 0xFC;
-    TL0_REG   = 0x66;
+    TH0_REG   = TIMER0_RELOAD_TH;
+    TL0_REG   = TIMER0_RELOAD_TL;
 
     /* Enable Timer 0 Interrupt and Global Interrupt (Bit 7: EA=1, Bit 1: ET0=1) */
     IE_REG   |= 0x82;
@@ -55,8 +55,8 @@ void Timer_ISR_Handler(void)
 /* Hardware Interrupt Service Routine for Timer 0 (Vector 1 at 0x000B) */
 void Timer0_ISR(void) interrupt 1
 {
-    TH0_REG = 0xFC;
-    TL0_REG = 0x66;
+    TH0_REG = TIMER0_RELOAD_TH;
+    TL0_REG = TIMER0_RELOAD_TL;
     Timer_ISR_Handler();
 }
 
