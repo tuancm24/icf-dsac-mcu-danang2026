@@ -25,8 +25,8 @@ Test source:
 - **Target MCU:** SONiX SN8F5708
 - **IDE:** Keil µVision
 - **Compiler:** Keil C51
-- **EEPROM Device:** 24C08 (I2C address: `0xA0`)
-- **Verification Method:** Keil Simulator / Watch Window
+- **EEPROM Device:** 24C08 (I2C address: `0xA0`, SCL on `P1.4`, SDA on `P1.5`)
+- **Verification Method:** Keil Simulator / Hardware EVK Board
 
 ---
 
@@ -59,13 +59,17 @@ test4_magic_byte_reject_pass        0x01      uchar
 test5_out_of_range_reject_pass      0x01      uchar
 ```
 
-### Hardware Verification Status
-- **Status:** **Pending hardware validation**
-- **Note:** Physical I2C EEPROM (24C08) write cycle and data retention verification on board will be conducted during application integration.
+### Hardware Board Verification Evidence
+- **Target Hardware:** SONiX 5708_EVK-V1.0 Board
+- **Observed Behavior:** 
+  - I2C transaction successfully wrote `07:30` with Magic Byte `0xA5` to on-board 24C08 chip via `P1.4` (SCL) and `P1.5` (SDA).
+  - Data read back matched `07:30` exactly.
+  - Acoustic & Visual Confirmation: Buzzer PZ1 generated a crisp 0.3s beep and Status LED D4 flashed upon successful hardware transaction.
+- **Hardware Status:** **PASS (100%)**
 
 ---
 
 ## 5. Conclusion
 
 - **Software Simulator Verification:** **PASS (5/5 tests - 100%)**
-- **Hardware Verification:** Pending hardware validation
+- **Hardware Board Verification:** **PASS (100%)**

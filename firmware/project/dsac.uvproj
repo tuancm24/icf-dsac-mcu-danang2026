@@ -125,7 +125,7 @@
             <Oh166RecLen>16</Oh166RecLen>
           </OPTHX>
           <Simulator>
-            <UseSimulator>1</UseSimulator>
+            <UseSimulator>0</UseSimulator>
             <LoadApplicationAtStartup>1</LoadApplicationAtStartup>
             <RunToMain>1</RunToMain>
             <RestoreBreakpoints>1</RestoreBreakpoints>
@@ -137,7 +137,7 @@
             <RestoreSysVw>1</RestoreSysVw>
           </Simulator>
           <Target>
-            <UseTarget>0</UseTarget>
+            <UseTarget>1</UseTarget>
             <LoadApplicationAtStartup>1</LoadApplicationAtStartup>
             <RunToMain>0</RunToMain>
             <RestoreBreakpoints>1</RestoreBreakpoints>
@@ -316,7 +316,7 @@
             <Fuzzy>3</Fuzzy>
             <Optimize>8</Optimize>
             <WarningLevel>2</WarningLevel>
-            <SizeSpeed>1</SizeSpeed>
+            <SizeSpeed>0</SizeSpeed>
             <ObjectExtend>1</ObjectExtend>
             <ACallAJmp>0</ACallAJmp>
             <InterruptVectorAddress>0</InterruptVectorAddress>
@@ -387,34 +387,29 @@
               <FilePath>D:\Keil_v5\C51\INC\SONIX\OPTIONS_SN8F5708.A51</FilePath>
             </File>
             <File>
-              <FileName>gpio.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\platform\gpio.c</FilePath>
-            </File>
-            <File>
               <FileName>timer.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\platform\timer.c</FilePath>
             </File>
             <File>
-              <FileName>display.c</FileName>
+              <FileName>gpio.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\drivers\display.c</FilePath>
+              <FilePath>..\platform\gpio.c</FilePath>
             </File>
             <File>
-              <FileName>eeprom.c</FileName>
+              <FileName>buzzer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\drivers\eeprom.c</FilePath>
+              <FilePath>..\drivers\buzzer.c</FilePath>
             </File>
             <File>
-              <FileName>eeprom_test.c</FileName>
+              <FileName>button.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\drivers\eeprom_test.c</FilePath>
+              <FilePath>..\drivers\button.c</FilePath>
             </File>
             <File>
-              <FileName>i2c.c</FileName>
+              <FileName>button_test.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\platform\i2c.c</FilePath>
+              <FilePath>..\drivers\button_test.c</FilePath>
             </File>
           </Files>
         </Group>

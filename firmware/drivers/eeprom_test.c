@@ -1,18 +1,13 @@
 #include "eeprom.h"
-#include "display.h"
 #include "buzzer.h"
 #include "timer.h"
 #include "gpio.h"
+#include "i2c.h"
 #include <SN8F5708.H>
 
 /* =========================================================================
  * I2C EEPROM (24C08) Driver Verification & Hardware Board Test Runner
  * Target MCU: SONiX SN8F5708 EVK
- *
- * Hardware Peripherals:
- * - U6 (24C08 EEPROM on Header J6: SCL=P1.4, SDA=P1.5)
- * - LED D4 (P0.3), Buzzer PZ1 (P1.0)
- * - SMG1 4-Digit 7SEG (Display restored alarm time)
  * ========================================================================= */
 
 volatile unsigned char test1_save_alarm_pass = 0;
@@ -26,14 +21,16 @@ void main(void)
     unsigned char read_hour = 0;
     unsigned char read_minute = 0;
     unsigned char eeprom_ok = 0;
-    unsigned long last_scan_tick = 0;
 
-    /* 1. Initialize hardware platform */
+    /* 1. Initialize Hardware Platform */
     WDTR = 0x5A;
     GPIO_Init();
     Timer_Init();
-    Display_Init();
+    Buzzer_Init();
     EEPROM_Init();
+
+    /* 2. Startup Stabilization Delay (50ms for physical 24C08 chip power-on) */
+    Timer_DelayUs(50000U);
 
     /* =====================================================================
      * SECTION A: Software Simulation Unit Verification
@@ -46,45 +43,41 @@ void main(void)
                                       EEPROM_SaveAlarm(12, 65) == 0) ? 1 : 0;
 
     /* =====================================================================
-     * SECTION B: Hardware Board I2C EEPROM (24C08) Test
-     * 1. Save alarm time "07:30" to physical EEPROM chip
-     * 2. Read back and verify validity via Magic Byte (0xA5)
-     * 3. Display "07:30" on 4-Digit 7-Segment display to prove success!
+     * SECTION B: Hardware Live 24C08 Save & Restore Test
      * ===================================================================== */
-    /* Write test alarm to EEPROM */
+    /* Write 07:30 to EEPROM */
     EEPROM_SaveAlarm(7, 30);
 
-    /* Read back test alarm */
+    /* Read back and verify */
     if (EEPROM_ReadAlarm(&read_hour, &read_minute))
     {
-        eeprom_ok = (read_hour == 7 && read_minute == 30) ? 1 : 0;
+        if (read_hour == 7 && read_minute == 30)
+        {
+            eeprom_ok = 1;
+        }
     }
 
     if (eeprom_ok)
     {
-        /* Visual & Acoustic Confirmation */
-        GPIO_SetLED_D4(PIN_STATE_HIGH); /* LED D4 ON */
-        Display_SetTime(read_hour, read_minute);
-        Display_SetColon(1);
+        /* Success: Beep 0.3s & Turn ON LED D4 */
+        Buzzer_BeepShort();
+        GPIO_SetLED_D4(PIN_STATE_HIGH);
     }
     else
     {
-        /* Display Error (99:99) if EEPROM communication failed */
-        Display_SetTime(99, 99);
-        Display_SetColon(0);
+        /* If write/read failed, stay OFF */
+        GPIO_SetLED_D4(PIN_STATE_LOW);
     }
-
-    last_scan_tick = Timer_GetTickMs();
 
     while (1)
     {
-        WDTR = 0x5A; /* Clear Watchdog timer */
+        WDTR = 0x5A;
+        Buzzer_Process();
 
-        /* Multiplex 7SEG display every 2ms */
-        if (Timer_HasElapsed(last_scan_tick, 2))
+        /* Turn off LED D4 after beep completes */
+        if (!Buzzer_IsBusy())
         {
-            last_scan_tick = Timer_GetTickMs();
-            Display_ScanRoutine();
+            GPIO_SetLED_D4(PIN_STATE_LOW);
         }
     }
 }
