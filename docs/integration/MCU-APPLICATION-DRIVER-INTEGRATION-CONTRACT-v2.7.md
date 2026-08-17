@@ -1072,7 +1072,7 @@ These are merge blockers if violated.
 | IMP-BUZ-02 | Trung | Test proves 0.5 s ON/OFF transitions, not only total busy duration. |
 | IMP-BUZ-03 | Trung | Rapid short-beep refresh, alarm-preempts-short-beep, short-feedback-does-not-break-alarm, and repeated-alarm-start semantics match the frozen priority rules. |
 | IMP-EEP-01 | Trung | Persistence update is transaction-safe: invalidate -> hour -> minute -> valid marker last, or equivalent robust scheme. |
-| IMP-EEP-02 | Trung | 24C08 naming consistent across code/docs. |
+| IMP-EEP-02 | Trung | 24C05 naming consistent across code/docs. |
 | IMP-INIT-01 | Trung | `Board_Init()` owns low-level I2C initialization; any retained `EEPROM_Init()` is harmless/idempotent and not required by Application. |
 | IMP-INIT-02 | Trung | Any ISR/timer-driven Driver service is disabled/gated until the corresponding Driver initialization is complete. |
 | IMP-PIN-01 | Trung | `pin_config.h` and actual C51 hardware binding cannot silently disagree. |
