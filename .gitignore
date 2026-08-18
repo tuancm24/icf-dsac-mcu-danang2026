@@ -5,6 +5,10 @@ output/
 Debug/
 Release/
 dist/
+Listings/
+Objects/
+firmware/project/Listings/
+firmware/project/Objects/
 
 # Compiled files
 *.o
@@ -13,6 +17,12 @@ dist/
 *.bin
 *.map
 *.lst
+*.m51
+*.build_log.htm
+*.lnp
+*.sct
+*.d
+*.crf
 
 # Keep official release binaries
 *.hex
@@ -21,6 +31,7 @@ dist/
 # Temporary files
 *.tmp
 *.bak
+*.Bak
 *.log
 *.swp
 *~
@@ -31,6 +42,8 @@ dist/
 .idea/
 *.user
 *.workspace
+*.uvgui*
+*.uvopt*
 
 # Operating system files
 .DS_Store
