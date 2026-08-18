@@ -1,4 +1,3 @@
-#define TEST_BUILD
 #include "eeprom.h"
 #include "buzzer.h"
 #include "timer.h"
