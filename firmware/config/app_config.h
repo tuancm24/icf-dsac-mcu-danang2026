@@ -29,10 +29,10 @@
 /* 5. 7-Segment Display Refresh Parameters */
 #define DISPLAY_SCAN_DIGIT_INTERVAL_MS  (2)     /* Multiplex next digit every 2ms */
 
-/* 6. EEPROM Address Allocation */
+/* 6. EEPROM Address Allocation (24C05) */
 #define EEPROM_ADDR_ALARM_HOUR          (0x00)
 #define EEPROM_ADDR_ALARM_MINUTE        (0x01)
-#define EEPROM_ADDR_MAGIC_BYTE          (0x02)  /* Used to verify valid saved data (e.g. 0xA5) */
+#define EEPROM_ADDR_MAGIC_BYTE          (0x02)  /* Used to verify valid saved data (0xA5) */
 #define EEPROM_MAGIC_VALUE              (0xA5)
 
 #endif /* APP_CONFIG_H */

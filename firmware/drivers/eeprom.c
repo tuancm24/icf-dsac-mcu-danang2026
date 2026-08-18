@@ -21,16 +21,31 @@
 #define EEPROM_DEV_ADDR_READ        (EEPROM_I2C_DEV_ADDR | 0x01)
 #define EEPROM_WRITE_DELAY_MS       (10)
 
-/* Simulation / Test Mock Hooks (Excluded from production) */
-#ifdef TEST_BUILD
+/* Simulation / Test Mock Hooks (Active in test builds, excluded in production) */
+#if defined(TEST_BUILD) || defined(EEPROM_TEST_ACTIVE)
 static unsigned char s_mock_eeprom_storage[4] = {0xFF, 0xFF, 0xFF, 0xFF};
-static unsigned char s_mock_enabled = 1;
+static unsigned char s_mock_enabled = 0;
 static unsigned char s_inject_fail_step = 0; /* 0 = none, 1..4 = fail at step */
+
+void EEPROM_Test_SetMockMode(unsigned char enable)
+{
+    s_mock_enabled = enable;
+}
+
+void EEPROM_Test_InjectFailure(unsigned char step)
+{
+    s_inject_fail_step = step;
+}
+
+void EEPROM_Test_CorruptMagic(unsigned char bad_magic)
+{
+    s_mock_eeprom_storage[EEPROM_ADDR_MAGIC_BYTE] = bad_magic;
+}
 #endif
 
 static unsigned char EEPROM_WriteByte(unsigned char mem_addr, unsigned char data_val)
 {
-#ifdef TEST_BUILD
+#if defined(TEST_BUILD) || defined(EEPROM_TEST_ACTIVE)
     if (s_mock_enabled)
     {
         if (mem_addr < 4)
@@ -69,7 +84,7 @@ static unsigned char EEPROM_WriteByte(unsigned char mem_addr, unsigned char data
 
 static unsigned char EEPROM_ReadByte(unsigned char mem_addr, unsigned char *data_out)
 {
-#ifdef TEST_BUILD
+#if defined(TEST_BUILD) || defined(EEPROM_TEST_ACTIVE)
     if (s_mock_enabled)
     {
         if (mem_addr < 4 && data_out != 0)
@@ -127,7 +142,7 @@ unsigned char EEPROM_SaveAlarm(unsigned char hour, unsigned char minute)
         return 0;
     }
 
-#ifdef TEST_BUILD
+#if defined(TEST_BUILD) || defined(EEPROM_TEST_ACTIVE)
     if (s_inject_fail_step == 1) return 0;
 #endif
 
@@ -137,7 +152,7 @@ unsigned char EEPROM_SaveAlarm(unsigned char hour, unsigned char minute)
         return 0;
     }
 
-#ifdef TEST_BUILD
+#if defined(TEST_BUILD) || defined(EEPROM_TEST_ACTIVE)
     if (s_inject_fail_step == 2) return 0;
 #endif
 
@@ -147,7 +162,7 @@ unsigned char EEPROM_SaveAlarm(unsigned char hour, unsigned char minute)
         return 0;
     }
 
-#ifdef TEST_BUILD
+#if defined(TEST_BUILD) || defined(EEPROM_TEST_ACTIVE)
     if (s_inject_fail_step == 3) return 0;
 #endif
 
@@ -157,7 +172,7 @@ unsigned char EEPROM_SaveAlarm(unsigned char hour, unsigned char minute)
         return 0;
     }
 
-#ifdef TEST_BUILD
+#if defined(TEST_BUILD) || defined(EEPROM_TEST_ACTIVE)
     if (s_inject_fail_step == 4) return 0;
 #endif
 
@@ -204,20 +219,3 @@ unsigned char EEPROM_ReadAlarm(unsigned char *hour, unsigned char *minute)
     *minute = m;
     return 1;
 }
-
-#ifdef TEST_BUILD
-void EEPROM_Test_SetMockMode(unsigned char enable)
-{
-    s_mock_enabled = enable;
-}
-
-void EEPROM_Test_InjectFailure(unsigned char step)
-{
-    s_inject_fail_step = step;
-}
-
-void EEPROM_Test_CorruptMagic(unsigned char bad_magic)
-{
-    s_mock_eeprom_storage[EEPROM_ADDR_MAGIC_BYTE] = bad_magic;
-}
-#endif

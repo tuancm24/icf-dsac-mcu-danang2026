@@ -8,6 +8,7 @@
 
 sfr TH0_REG = 0x8C; /* SFR TH0 */
 sfr TL0_REG = 0x8A; /* SFR TL0 */
+sbit EAL_BIT = 0xA8^7; /* Global Interrupt Enable Bit (IEN0.7 / EAL) */
 
 static volatile unsigned long s_system_tick_ms = 0;
 
@@ -27,7 +28,7 @@ void Timer_Init(void)
     /* 4. Enable Timer 0 Interrupt & Start Timer */
     ET0 = 1;            /* Enable Timer 0 interrupt */
     TR0 = 1;            /* Start Timer 0 */
-    EA  = 1;            /* Global interrupt enable */
+    EAL_BIT = 1;        /* Global interrupt enable */
 }
 
 unsigned long Timer_GetTickMs(void)
@@ -37,13 +38,13 @@ unsigned long Timer_GetTickMs(void)
 
     /*
      * Coherent 32-bit Atomic Snapshot (IMP-TMR-01):
-     * Save previous EA interrupt state, disable interrupts during 4-byte copy,
-     * then restore exact previous EA state.
+     * Save previous EA/EAL interrupt state, disable interrupts during 4-byte copy,
+     * then restore exact previous state.
      */
-    ea_state = EA;
-    EA = 0;
+    ea_state = EAL_BIT;
+    EAL_BIT = 0;
     tick = s_system_tick_ms;
-    EA = ea_state;
+    EAL_BIT = ea_state;
 
     return tick;
 }

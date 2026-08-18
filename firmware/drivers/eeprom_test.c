@@ -1,3 +1,4 @@
+#define EEPROM_TEST_ACTIVE
 #define TEST_BUILD
 #include "eeprom.h"
 #include "buzzer.h"
@@ -16,8 +17,10 @@
  *    - Invalid magic byte rejection
  *    - Out-of-range & NULL pointer rejection
  * 2. Fault Injection Suite (T-EEP-02 / IMP-EEP-01)
- *    - Inject failure at each transaction stage (1..4)
- *    - Assert no mixed/corrupted valid record is accepted
+ *    - Stage 1: Inject failure before invalidate -> Old baseline 10:20 preserved
+ *    - Stage 2: Inject failure during hour write -> Invalidation causes Read to fail
+ *    - Stage 3: Inject failure during minute write -> Invalidation causes Read to fail
+ *    - Stage 4: Inject failure during final magic write -> Read fails
  * 3. Interactive Hardware Board Runner
  * ========================================================================= */
 
@@ -41,7 +44,7 @@ void main(void)
     unsigned char eeprom_ok = 0;
 
     /* 1. Initialize Hardware Platform */
-    Board_FeedWatchdog();
+    WDTR = 0x5A;
     GPIO_Init();
     Timer_Init();
     Buzzer_Init();
@@ -86,30 +89,68 @@ void main(void)
     /* =====================================================================
      * SECTION B: Fault Injection Suite (T-EEP-02 / IMP-EEP-01)
      * ===================================================================== */
-    /* Setup known valid baseline */
+    fault_pass = 1;
+
+    /* A. Establish baseline (10:20) */
     EEPROM_Test_InjectFailure(0);
-    EEPROM_SaveAlarm(10, 20);
+    if (EEPROM_SaveAlarm(10, 20) != 1)
+    {
+        fault_pass = 0;
+    }
 
-    /* Step 1 failure injection */
+    /* B. Inject Stage 1: Failure before invalidate */
     EEPROM_Test_InjectFailure(1);
-    EEPROM_SaveAlarm(11, 22);
-    /* Should fail to update and magic remains invalid or old */
+    if (EEPROM_SaveAlarm(11, 22) != 0)
+    {
+        fault_pass = 0;
+    }
 
-    /* Step 2 failure injection (hour write failed) */
+    /* C. Read-back Stage 1: Old baseline 10:20 must remain intact */
+    h = 0; m = 0;
+    if (EEPROM_ReadAlarm(&h, &m) != 1 || h != 10 || m != 20)
+    {
+        fault_pass = 0;
+    }
+
+    /* D. Inject Stage 2: Failure during hour write (after magic invalidated) */
     EEPROM_Test_InjectFailure(2);
-    EEPROM_SaveAlarm(12, 33);
-    /* Read must return 0 because magic was invalidated in step 1 */
-    if (EEPROM_ReadAlarm(&h, &m) != 0) fault_pass = 0;
+    if (EEPROM_SaveAlarm(12, 33) != 0)
+    {
+        /* Expected return 0 */
+    }
+    if (EEPROM_ReadAlarm(&h, &m) != 0)
+    {
+        fault_pass = 0; /* Magic was invalidated, must be rejected */
+    }
 
-    /* Step 3 failure injection (minute write failed) */
+    /* E. Inject Stage 3: Failure during minute write */
     EEPROM_Test_InjectFailure(3);
-    EEPROM_SaveAlarm(13, 44);
-    if (EEPROM_ReadAlarm(&h, &m) != 0) fault_pass = 0;
+    if (EEPROM_SaveAlarm(13, 44) != 0)
+    {
+        /* Expected return 0 */
+    }
+    if (EEPROM_ReadAlarm(&h, &m) != 0)
+    {
+        fault_pass = 0;
+    }
 
-    /* Step 4 failure injection (final magic write failed) */
+    /* F. Inject Stage 4: Failure during final magic write */
     EEPROM_Test_InjectFailure(4);
-    EEPROM_SaveAlarm(14, 55);
-    if (EEPROM_ReadAlarm(&h, &m) != 0) fault_pass = 0;
+    if (EEPROM_SaveAlarm(14, 55) != 0)
+    {
+        /* Expected return 0 */
+    }
+    if (EEPROM_ReadAlarm(&h, &m) != 0)
+    {
+        fault_pass = 0;
+    }
+
+    /* G. Restore clean injection state and verify final write succeeds */
+    EEPROM_Test_InjectFailure(0);
+    if (EEPROM_SaveAlarm(7, 30) != 1 || EEPROM_ReadAlarm(&h, &m) != 1 || h != 7 || m != 30)
+    {
+        fault_pass = 0;
+    }
 
     test6_fault_injection_pass = fault_pass;
 
@@ -145,7 +186,7 @@ void main(void)
 
     while (1)
     {
-        Board_FeedWatchdog();
+        WDTR = 0x5A;
         Buzzer_Process();
 
         if (!Buzzer_IsBusy())

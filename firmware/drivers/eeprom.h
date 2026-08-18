@@ -4,7 +4,7 @@
 #include "app_config.h"
 
 /* =========================================================================
- * EEPROM Driver Interface (24C08 on SONiX SN8F5708 EVK)
+ * EEPROM Driver Interface (24C05 on SONiX SN8F5708 EVK)
  * ========================================================================= */
 
 /* Initialize EEPROM / I2C peripheral interface (Idempotent) */

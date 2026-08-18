@@ -2,7 +2,6 @@
 #include "buzzer.h"
 #include "timer.h"
 #include "gpio.h"
-#include "board.h"
 #include <SN8F5708.H>
 
 /* =========================================================================
@@ -34,7 +33,7 @@ void main(void)
     Button_Event_t ev1, ev2, ev3, ev4;
 
     /* 1. Initialize Hardware Platform */
-    Board_FeedWatchdog();
+    WDTR = 0x5A;
     GPIO_Init();
     Timer_Init();
     Buzzer_Init();
@@ -127,7 +126,7 @@ void main(void)
 
     while (1)
     {
-        Board_FeedWatchdog();
+        WDTR = 0x5A;
 
         /* 1. Process non-blocking drivers in foreground loop */
         Button_Process();
