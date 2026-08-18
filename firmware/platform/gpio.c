@@ -3,7 +3,7 @@
 
 /* =========================================================================
  * Platform GPIO Implementation for SONiX SN8F5708 EVK
- * Hardware-Proven Matrix Scanning (Row Output Drive LOW, Col Pull-Up Read)
+ * Optimized Settling Delay for PCB Capacitance / Debounce Filtering
  * ========================================================================= */
 
 sfr P2UR_REG = 0xF3; /* Port 2 Pull-up Register */
@@ -46,8 +46,8 @@ static unsigned char s_sim_sw16_pressed = 0;
 
 static void delay_settle(void)
 {
-    volatile unsigned char d;
-    for (d = 0; d < 30; d++);
+    volatile unsigned int d;
+    for (d = 0; d < 150; d++); /* ~100us settling time for RC line capacitance */
 }
 
 void GPIO_Init(void)
@@ -137,7 +137,7 @@ void GPIO_SelectDisplayDigit(unsigned char digit_index)
 }
 
 /* =========================================================================
- * Button Matrix Scanning (Row Output LOW, Column Pull-Up Input):
+ * Button Matrix Scanning with Adequate Settling Time
  * ========================================================================= */
 
 Pin_State_t GPIO_ReadButton_SW3(void)
@@ -241,13 +241,11 @@ void GPIO_SetI2C_SCL(Pin_State_t state)
 {
     if (state == PIN_STATE_HIGH)
     {
-        /* Release SCL line to High-Z (pulled HIGH by onboard resistor) */
         P1M &= ~0x10;       /* Set P1.4 as Input / High-Z */
         PIN_HW_I2C_SCL = 1;
     }
     else
     {
-        /* Actively drive SCL LOW */
         PIN_HW_I2C_SCL = 0;
         P1M |= 0x10;        /* Set P1.4 as Output */
     }
@@ -257,13 +255,11 @@ void GPIO_SetI2C_SDA(Pin_State_t state)
 {
     if (state == PIN_STATE_HIGH)
     {
-        /* Release SDA line to High-Z (pulled HIGH by onboard resistor) */
         P1M &= ~0x20;       /* Set P1.5 as Input / High-Z */
         PIN_HW_I2C_SDA = 1;
     }
     else
     {
-        /* Actively drive SDA LOW */
         PIN_HW_I2C_SDA = 0;
         P1M |= 0x20;        /* Set P1.5 as Output */
     }

@@ -1,4 +1,3 @@
-#define EEPROM_TEST_ACTIVE
 #define TEST_BUILD
 #include "eeprom.h"
 #include "buzzer.h"
@@ -24,9 +23,11 @@
  * 3. Interactive Hardware Board Runner
  * ========================================================================= */
 
+#ifdef TEST_BUILD
 extern void EEPROM_Test_SetMockMode(unsigned char enable);
 extern void EEPROM_Test_InjectFailure(unsigned char step);
 extern void EEPROM_Test_CorruptMagic(unsigned char bad_magic);
+#endif
 
 volatile unsigned char test1_save_alarm_pass = 0;
 volatile unsigned char test2_read_alarm_pass = 0;
@@ -53,6 +54,7 @@ void main(void)
     /* =====================================================================
      * SECTION A: Software Simulation Assertion-Based Unit Tests (T-EEP-01)
      * ===================================================================== */
+#ifdef TEST_BUILD
     EEPROM_Test_SetMockMode(1);
     EEPROM_Test_InjectFailure(0);
 
@@ -153,12 +155,15 @@ void main(void)
     }
 
     test6_fault_injection_pass = fault_pass;
+#endif
 
     /* =====================================================================
      * SECTION C: Interactive Hardware Board Runner
      * ===================================================================== */
+#ifdef TEST_BUILD
     EEPROM_Test_SetMockMode(0); /* Switch to real physical I2C pins */
     EEPROM_Test_InjectFailure(0);
+#endif
 
     Timer_DelayUs(50000U); /* 50ms startup stabilization delay */
 
