@@ -4,14 +4,14 @@
 
 This document defines the requirements, architecture, behavior, and public interface of the I2C EEPROM Driver for the SONiX SN8F5708 EVK digital clock application.
 
-The driver provides non-volatile storage and retrieval of confirmed alarm time (`hour` and `minute`) on an external I2C EEPROM (`24C02`), with data validation via a dedicated magic byte.
+The driver provides non-volatile storage and retrieval of confirmed alarm time (`hour` and `minute`) on an external I2C EEPROM (`24C05`), with data validation via a dedicated magic byte and 4-step transaction safety.
 
 ---
 
 ## 2. Scope
 
 This specification covers:
-- Hardware target: 24C02 I2C EEPROM on SONiX SN8F5708 EVK.
+- Hardware target: 24C05 I2C EEPROM on SONiX SN8F5708 EVK (U6 / Header J6).
 - Source files:
   - `firmware/drivers/eeprom.c` / `eeprom.h`
   - `firmware/platform/i2c.c` / `i2c.h`
@@ -23,9 +23,9 @@ This specification covers:
 ## 3. Responsibilities
 
 ### EEPROM Driver Owns:
-- Writing alarm hour (`0x00`), alarm minute (`0x01`), and magic byte (`0x02` = `0xA5`) to EEPROM.
+- Writing alarm hour (`0x00`), alarm minute (`0x01`), and magic byte (`0x02` = `0xA5`) to EEPROM using transaction-safe ordering.
 - Reading and validating stored alarm parameters upon system startup.
-- I2C bus transaction protocol execution (Start, Stop, Byte write, Random read, Acknowledge).
+- I2C bus transaction protocol execution (Start, Stop, Byte write, Random read, Acknowledge) with open-drain release semantics.
 
 ### EEPROM Driver Does NOT Own:
 - Deciding when the user confirms an alarm (owned by Application FSM).
@@ -44,20 +44,20 @@ This specification covers:
                               v
 +-----------------------------------------------------------+
 |                    EEPROM Driver Layer                    |
-|  - Memory Map Management (0x00: Hour, 0x01: Min, 0x02: A5)|
+|  - 4-step Transaction Safety (Invalidate -> Data -> A5)   |
 |  - Data Range & Magic Byte Validation                     |
 +-----------------------------------------------------------+
                               |
                               v
 +-----------------------------------------------------------+
 |                     Platform I2C Layer                    |
-|          (I2C_Start, I2C_Stop, I2C_Write, I2C_Read)       |
+|       (I2C_Start, I2C_Stop, I2C_WriteByte, I2C_ReadByte)  |
 +-----------------------------------------------------------+
                               |
                               v
 +-----------------------------------------------------------+
-|                 24C02 I2C EEPROM Hardware                 |
-|                       (SCL, SDA)                          |
+|                 24C05 I2C EEPROM Hardware                 |
+|                   (SCL: P1.4, SDA: P1.5)                  |
 +-----------------------------------------------------------+
 ```
 
@@ -80,68 +80,21 @@ unsigned char EEPROM_ReadAlarm(unsigned char *hour, unsigned char *minute);
 
 ---
 
-## 6. Functional Behavior
+## 6. Functional Behavior & Transaction Safety (IMP-EEP-01)
 
 1. **Save Alarm Time (`EEPROM_SaveAlarm`):**
-   - Writes `hour` to address `0x00`.
-   - Writes `minute` to address `0x01`.
-   - Writes Magic Byte `0xA5` to address `0x02`.
+   - Step 1: Invalidate Magic Byte (writes `0x00` to `0x02`).
+   - Step 2: Write `hour` to address `0x00`.
+   - Step 3: Write `minute` to address `0x01`.
+   - Step 4: Write Magic Byte `0xA5` to address `0x02`.
    - Returns `1` on success, `0` on I2C failure or invalid parameters.
 2. **Read Alarm Time (`EEPROM_ReadAlarm`):**
-   - Reads Magic Byte at `0x02`. If not `0xA5`, returns `0` (Unconfigured).
-   - Reads `hour` and `minute`. If ranges are valid (`hour <= 23`, `minute <= 59`), populates pointers and returns `1`.
+   - Reads Magic Byte at `0x02`. If not `0xA5`, returns `0` (Unconfigured / Incomplete).
+   - Reads `hour` and `minute`. If ranges are valid (`hour <= 23`, `minute <= 59`), populates output pointers and returns `1`.
 
 ---
 
 ## 7. Initialization
 
-Immediately after `EEPROM_Init()`:
-- I2C bus lines (`SCL`, `SDA`) initialized to idle `HIGH` state.
-
----
-
-## 8. Input / Output Behavior
-
-| Function | Input | Stored Data | Return |
-|---|---|---|---|
-| `EEPROM_SaveAlarm(7, 30)` | `h=7, m=30` | `[0x00]=7, [0x01]=30, [0x02]=0xA5` | `1` (Success) |
-| `EEPROM_SaveAlarm(25, 70)`| `h=25, m=70`| None | `0` (Rejected) |
-| `EEPROM_ReadAlarm(&h, &m)`| Magic `0xA5` | `h=7, m=30` | `1` (Valid) |
-| `EEPROM_ReadAlarm(&h, &m)`| Magic `0xFF` | None | `0` (Invalid) |
-
----
-
-## 9. Boundary / Invalid Conditions
-
-- Out-of-range hours (`> 23`) or minutes (`> 59`) rejected immediately.
-- Corrupted magic byte indicates uninitialized memory, preventing spurious alarms.
-
----
-
-## 10. Software Verification
-
-Verified via Keil C51 Simulator:
-- `TEST 1`: Save valid alarm time (`07:30`).
-- `TEST 2`: Read back saved alarm time (`07:30`).
-- `TEST 3`: Boundary values save and restore (`23:59`).
-- `TEST 4`: Magic byte mismatch rejection.
-- `TEST 5`: Out-of-range rejection.
-
----
-
-## 11. Hardware Verification Status
-
-- **Status:** **Pending hardware validation**
-- **Note:** Physical I2C EEPROM (24C08) write cycle and data retention verification on board will be conducted during application integration.
-
----
-
-## 12. Integration Notes
-
-- Write cycle delay (5-10ms) is automatically handled between sequential byte writes.
-
----
-
-## 13. Known Limitations
-
-- Standard 24C02 byte-write mode is used; page write is unnecessary for 3 bytes.
+Immediately after `Board_Init()` / `EEPROM_Init()`:
+- I2C bus lines (`SCL`, `SDA`) released to idle `HIGH` state (High-Z).

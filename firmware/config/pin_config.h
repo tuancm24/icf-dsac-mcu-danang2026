@@ -4,7 +4,7 @@
 #include "board_config.h"
 
 /* =========================================================================
- * SONiX SN8F5708 EVK - Hardware Pin Mapping
+ * SONiX SN8F5708 EVK - Hardware Pin Mapping (PIN MAP v1.0)
  * Verified from Board Silkscreen Layout (5708_EVK-V1.0 2024.02.26)
  * ========================================================================= */
 
@@ -39,22 +39,22 @@
 #define PIN_DIG4_BIT                    (3)     /* P5.3 (Q4: Minute Units) */
 
 /* -------------------------------------------------------------------------
- * 4. Button Matrix 4x4 (SW3, SW6, SW10, SW16)
- *    - Rows: P2.4 (Row 1), P2.5 (Row 2), P2.6 (Row 3), P2.7 (Row 4)
- *    - Cols: P4.4 (Col 1), P4.5 (Col 2), P4.6 (Col 3), P4.7 (Col 4)
+ * 4. Button Matrix 4x4 (Official SONiX Scan Direction)
+ *    - Scan Outputs (Columns): P4.4 (Col 0), P4.5 (Col 1), P4.6 (Col 2), P4.7 (Col 3)
+ *    - Key Inputs (Rows):      P2.4 (Row 0), P2.5 (Row 1), P2.6 (Row 2), P2.7 (Row 3)
  * ------------------------------------------------------------------------- */
-#define BUTTON_ROW_SW3_SW6              (4)     /* P2.4 (Row 1: SW3, SW4, SW5, SW6) */
-#define BUTTON_ROW_SW10                 (5)     /* P2.5 (Row 2: SW7, SW8, SW9, SW10) */
-#define BUTTON_ROW_SW16                 (7)     /* P2.7 (Row 4: SW16, SW15, SW17, SW18) */
+#define BUTTON_ROW0_BIT                 (4)     /* P2.4 (Row 0: SW3, SW6) */
+#define BUTTON_ROW1_BIT                 (5)     /* P2.5 (Row 1: SW10) */
+#define BUTTON_ROW3_BIT                 (7)     /* P2.7 (Row 3: SW16) */
 
-#define BUTTON_COL_SW3_SW16             (4)     /* P4.4 (Col 1: SW3, SW7, SW11, SW16) */
-#define BUTTON_COL_SW6_SW10             (7)     /* P4.7 (Col 4: SW6, SW10, SW14, SW18) */
+#define BUTTON_COL0_BIT                 (4)     /* P4.4 (Col 0: SW3, SW16) */
+#define BUTTON_COL3_BIT                 (7)     /* P4.7 (Col 3: SW6, SW10) */
 
 /* -------------------------------------------------------------------------
- * 5. I2C EEPROM Interface (24C08 / Header J6)
+ * 5. I2C EEPROM Interface (U6: 24C05 / Header J6)
  * ------------------------------------------------------------------------- */
 #define PIN_I2C_SCL_BIT                 (4)     /* P1.4 (Silkscreen: SCL_P14) */
 #define PIN_I2C_SDA_BIT                 (5)     /* P1.5 (Silkscreen: SDA_P15) */
-#define EEPROM_I2C_DEV_ADDR             (0xA0)
+#define EEPROM_I2C_DEV_ADDR             (0xA0)  /* Fitted EVK Part: 24C05 */
 
 #endif /* PIN_CONFIG_H */

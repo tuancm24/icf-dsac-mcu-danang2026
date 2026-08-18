@@ -2,32 +2,32 @@
 #define BOARD_CONFIG_H
 
 /* =========================================================================
- * SONiX SN8F5708 EVK - Board Hardware Configuration
+ * SONiX SN8F5708 EVK - Board Clock & Hardware Configuration
+ * Target MCU: SN8F5708F (LQFP48)
+ * Development Board: SONiX 5708_EVK-V1.0 (2024.02.26)
  * ========================================================================= */
 
+/* 1. Oscillator Frequency */
+#define FOSC                        (12000000UL) /* 12.000 MHz External Crystal (Y1 on EVK) */
+#define FCPU                        (FOSC)       /* CPU Clock = 12 MHz */
+
+/* 2. Timer 0 Periodic System Tick (1.000 ms) */
+#define TIMER0_PRESCALER            (12UL)
+#define TIMER0_CLOCK_HZ             (FOSC / TIMER0_PRESCALER) /* 1 MHz -> 1 us per tick */
+#define TIMER0_TICK_RATE_HZ         (1000UL)                  /* 1000 Hz = 1 ms interval */
+#define TIMER0_TICKS_PER_PERIOD     (TIMER0_CLOCK_HZ / TIMER0_TICK_RATE_HZ) /* 1000 counts */
+
 /*
- * System Clock Frequency Configuration:
- * - 12 MHz External Crystal (Y1 on EVK Board Silkscreen / BOM)
- * - 16 MHz / 32 MHz Internal High-Speed RC Oscillator (IHRC)
+ * Timer 0 Mode 1 (16-bit Timer with Software Reload in ISR)
+ * Reload Value Calculation: 65536 - 1000 = 64536 = 0xFC18
  */
-#ifndef FOSC
-#define FOSC                        (12000000UL) /* 12 MHz Crystal on EVK */
+#define TIMER0_RELOAD_VALUE         (65536UL - TIMER0_TICKS_PER_PERIOD)
+#define TIMER0_RELOAD_TH            ((unsigned char)((TIMER0_RELOAD_VALUE >> 8) & 0xFF)) /* 0xFC */
+#define TIMER0_RELOAD_TL            ((unsigned char)(TIMER0_RELOAD_VALUE & 0xFF))        /* 0x18 */
+
+/* 3. Watchdog Configuration Policy (IMP-WDT-01) */
+#ifndef BOARD_WDT_ENABLED
+#define BOARD_WDT_ENABLED           (0) /* 1 = Enabled (feed WDTR), 0 = Disabled (safe no-op) */
 #endif
-
-/* System Instruction Cycle / Machine Cycle (Standard 8051 / 12T) */
-#define MCU_TIMER_PRESCALER         (12UL)
-#define TIMER_TICK_FREQ             (FOSC / MCU_TIMER_PRESCALER) /* 1 MHz at 12MHz FOSC */
-
-/* 1ms Hardware Timer 0 Reload Value Calculation:
- * Counts per 1ms = TIMER_TICK_FREQ / 1000 = 1000 counts
- * 16-bit Auto-reload: 65536 - 1000 = 64536 = 0xFC18
- */
-#define TIMER0_1MS_RELOAD_VALUE     (65536UL - (TIMER_TICK_FREQ / 1000UL))
-#define TIMER0_RELOAD_TH            ((unsigned char)((TIMER0_1MS_RELOAD_VALUE >> 8) & 0xFF))
-#define TIMER0_RELOAD_TL            ((unsigned char)(TIMER0_1MS_RELOAD_VALUE & 0xFF))
-
-/* System Timer Tick Configuration (1ms per tick) */
-#define SYS_TICK_PERIOD_MS          (1)
-#define SYS_TICKS_PER_SEC           (1000 / SYS_TICK_PERIOD_MS)
 
 #endif /* BOARD_CONFIG_H */

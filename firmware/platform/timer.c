@@ -1,58 +1,58 @@
 #include "timer.h"
-#include "app_config.h"
+#include <SN8F5708.H>
 
 /* =========================================================================
- * Platform Timer Implementation for SONiX SN8F5708 EVK
- * Standard 8051 SFR Definitions & 1ms Periodic Interrupt
+ * Platform Timer & System Tick Implementation
+ * Target: SONiX SN8F5708 (Mode 1 16-bit Timer with Software Reload in ISR)
  * ========================================================================= */
 
-sfr TCON_REG = 0x88; /* Timer Control Register */
-sfr TMOD_REG = 0x89; /* Timer Mode Register */
-sfr TL0_REG  = 0x8A; /* Timer 0 Low Byte */
-sfr TH0_REG  = 0x8C; /* Timer 0 High Byte */
-sfr IE_REG   = 0xA8; /* Interrupt Enable Register */
+sfr TH0_REG = 0x8C; /* SFR TH0 */
+sfr TL0_REG = 0x8A; /* SFR TL0 */
 
 static volatile unsigned long s_system_tick_ms = 0;
 
 void Timer_Init(void)
 {
+    /* 1. Configure Timer 0 in Mode 1 (16-bit up-counting timer) */
+    TMOD &= 0xF0;       /* Clear T0 mode bits (T0M1, T0M0, T0CT, T0GATE) */
+    TMOD |= 0x01;       /* T0M0 = 1, T0M1 = 0: Mode 1 (16-bit timer), clock from fcpu/12 */
+
+    /* 2. Load 1ms Initial Reload Value (0xFC18 for 12MHz FOSC) */
+    TH0_REG = TIMER0_RELOAD_TH;
+    TL0_REG = TIMER0_RELOAD_TL;
+
+    /* 3. Reset 32-bit System Tick Counter */
     s_system_tick_ms = 0;
 
-    /*
-     * Hardware Timer 0 Configuration on SN8F5708:
-     * - TMOD: Timer 0 Mode 1 (16-bit Timer)
-     * - Reload value: computed dynamically from FOSC in board_config.h
-     * - IE Register (0xA8): Bit 7 = Global Interrupt Enable (EA), Bit 1 = Timer 0 Enable (ET0)
-     * - TCON Register (0x88): Bit 4 = Timer 0 Run Control (TR0)
-     */
-    TMOD_REG &= 0xF0;
-    TMOD_REG |= 0x01; /* Timer 0 Mode 1 (16-bit) */
-    TH0_REG   = TIMER0_RELOAD_TH;
-    TL0_REG   = TIMER0_RELOAD_TL;
-
-    /* Enable Timer 0 Interrupt and Global Interrupt (Bit 7: EA=1, Bit 1: ET0=1) */
-    IE_REG   |= 0x82;
-
-    /* Start Timer 0 (Bit 4: TR0 = 1) */
-    TCON_REG |= 0x10;
+    /* 4. Enable Timer 0 Interrupt & Start Timer */
+    ET0 = 1;            /* Enable Timer 0 interrupt */
+    TR0 = 1;            /* Start Timer 0 */
+    EA  = 1;            /* Global interrupt enable */
 }
 
 unsigned long Timer_GetTickMs(void)
 {
     unsigned long tick;
-    unsigned char ea_state = IE_REG & 0x80; /* Save previous interrupt state (EA) */
+    unsigned char ea_state;
 
-    IE_REG &= ~0x80; /* Mask global interrupt temporarily to avoid torn 32-bit read */
+    /*
+     * Coherent 32-bit Atomic Snapshot (IMP-TMR-01):
+     * Save previous EA interrupt state, disable interrupts during 4-byte copy,
+     * then restore exact previous EA state.
+     */
+    ea_state = EA;
+    EA = 0;
     tick = s_system_tick_ms;
-    IE_REG |= ea_state; /* Restore previous interrupt state */
+    EA = ea_state;
 
     return tick;
 }
 
 unsigned char Timer_HasElapsed(unsigned long start_tick, unsigned long duration_ms)
 {
-    unsigned long now = Timer_GetTickMs();
-    return ((now - start_tick) >= duration_ms) ? 1 : 0;
+    unsigned long current_tick = Timer_GetTickMs();
+    /* Wrap-safe unsigned arithmetic */
+    return ((current_tick - start_tick) >= duration_ms) ? 1 : 0;
 }
 
 void Timer_ISR_Handler(void)
@@ -60,14 +60,20 @@ void Timer_ISR_Handler(void)
     s_system_tick_ms++;
 }
 
-/* Hardware Interrupt Service Routine for Timer 0 (Vector 1 at 0x000B) */
 void Timer0_ISR(void) interrupt 1
 {
+    /* Software reload of 16-bit reload value in Mode 1 */
     TH0_REG = TIMER0_RELOAD_TH;
     TL0_REG = TIMER0_RELOAD_TL;
+
+    /* Call platform tick handler */
     Timer_ISR_Handler();
 }
 
+/*
+ * Approximate unverified software loop for microsecond-range delays.
+ * Used for basic bit-banging I2C bus cycle pacing.
+ */
 void Timer_DelayUs(unsigned int us)
 {
     volatile unsigned int i;
@@ -75,7 +81,7 @@ void Timer_DelayUs(unsigned int us)
     {
         for (i = 0; i < 4; i++)
         {
-            /* Calibrated loop for microsecond delay at 12MHz */
+            /* Approximate cycle delay */
         }
     }
 }

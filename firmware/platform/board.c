@@ -2,25 +2,30 @@
 #include <SN8F5708.H>
 
 /* =========================================================================
- * Platform Board Implementation (SONiX SN8F5708 EVK)
+ * Platform Board Implementation for SONiX SN8F5708 EVK
+ * Master Hardware Initializer & Watchdog Abstraction (IMP-WDT-01)
  * ========================================================================= */
 
 void Board_Init(void)
 {
-    /* 1. Feed Watchdog immediately upon entry */
+    /* 1. Feed Watchdog upon initial entry */
     Board_FeedWatchdog();
 
-    /* 2. Initialize GPIO pin directions and default inactive states */
+    /* 2. Initialize low-level MCU peripherals in deterministic sequence */
     GPIO_Init();
-
-    /* 3. Initialize I2C Bus Peripheral */
     I2C_Init();
-
-    /* 4. Initialize and start System Tick Timer 0 (1ms periodic interrupt) */
     Timer_Init();
 }
 
 void Board_FeedWatchdog(void)
 {
+#if BOARD_WDT_ENABLED
+    /* If Watchdog is enabled in production configuration, write clear sequence */
     WDTR = 0x5A;
+#else
+    /*
+     * If Watchdog is disabled in configuration, this function is a safe no-op.
+     * Application layer can call Board_FeedWatchdog() every cycle without knowing policy.
+     */
+#endif
 }
