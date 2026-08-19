@@ -40,11 +40,13 @@ static unsigned char s_led_d4_state = 0;
 static unsigned char s_display_segments = 0;
 static unsigned char s_active_digit = 0xFF;
 
+#ifdef TEST_BUILD
 /* Simulation State Flags */
 static unsigned char s_sim_sw3_pressed = 0;
 static unsigned char s_sim_sw6_pressed = 0;
 static unsigned char s_sim_sw10_pressed = 0;
 static unsigned char s_sim_sw16_pressed = 0;
+#endif
 
 static void delay_settle(void)
 {
@@ -82,11 +84,13 @@ void GPIO_Init(void)
     PIN_HW_ROW2 = 1;
     PIN_HW_ROW3 = 1;
 
+#ifdef TEST_BUILD
     /* Reset simulation flags */
     s_sim_sw3_pressed = 0;
     s_sim_sw6_pressed = 0;
     s_sim_sw10_pressed = 0;
     s_sim_sw16_pressed = 0;
+#endif
 
     /* Set default inactive states for outputs */
     GPIO_SetBuzzer(PIN_STATE_LOW);
@@ -146,7 +150,9 @@ void GPIO_SelectDisplayDigit(unsigned char digit_index)
 Pin_State_t GPIO_ReadButton_SW3(void)
 {
     Pin_State_t state;
+#ifdef TEST_BUILD
     if (s_sim_sw3_pressed) return PIN_STATE_LOW;
+#endif
 
     /* Ensure all columns idle HIGH */
     P4 |= 0xF0;
@@ -167,7 +173,9 @@ Pin_State_t GPIO_ReadButton_SW3(void)
 Pin_State_t GPIO_ReadButton_SW6(void)
 {
     Pin_State_t state;
+#ifdef TEST_BUILD
     if (s_sim_sw6_pressed) return PIN_STATE_LOW;
+#endif
 
     P4 |= 0xF0;
 
@@ -186,7 +194,9 @@ Pin_State_t GPIO_ReadButton_SW6(void)
 Pin_State_t GPIO_ReadButton_SW10(void)
 {
     Pin_State_t state;
+#ifdef TEST_BUILD
     if (s_sim_sw10_pressed) return PIN_STATE_LOW;
+#endif
 
     P4 |= 0xF0;
 
@@ -205,7 +215,9 @@ Pin_State_t GPIO_ReadButton_SW10(void)
 Pin_State_t GPIO_ReadButton_SW16(void)
 {
     Pin_State_t state;
+#ifdef TEST_BUILD
     if (s_sim_sw16_pressed) return PIN_STATE_LOW;
+#endif
 
     P4 |= 0xF0;
 
@@ -221,6 +233,7 @@ Pin_State_t GPIO_ReadButton_SW16(void)
     return state;
 }
 
+#ifdef TEST_BUILD
 void GPIO_SimulateButtonPress(unsigned char button_id, unsigned char is_pressed)
 {
     switch (button_id)
@@ -232,6 +245,7 @@ void GPIO_SimulateButtonPress(unsigned char button_id, unsigned char is_pressed)
         default: break;
     }
 }
+#endif
 
 /* =========================================================================
  * I2C EEPROM (24C05) Bit-Banging Physical Pin Control

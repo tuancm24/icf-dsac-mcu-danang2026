@@ -40,8 +40,10 @@ Pin_State_t GPIO_ReadButton_SW6(void);
 Pin_State_t GPIO_ReadButton_SW10(void);
 Pin_State_t GPIO_ReadButton_SW16(void);
 
+#ifdef TEST_BUILD
 /* Simulation / Unit Testing Button Injection */
 void GPIO_SimulateButtonPress(unsigned char button_id, unsigned char is_pressed);
+#endif
 
 /* I2C EEPROM (24C05) Bit-Banging Bus Control */
 void GPIO_SetI2C_SCL(Pin_State_t state);
