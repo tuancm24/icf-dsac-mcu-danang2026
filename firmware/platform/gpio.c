@@ -3,7 +3,9 @@
 
 /* =========================================================================
  * Platform GPIO Implementation for SONiX SN8F5708 EVK
- * Optimized Settling Delay for PCB Capacitance / Debounce Filtering
+ * Official SONiX EVK Reference:
+ * - Scan Outputs (Columns): Port 4 (P4.4..P4.7 driven LOW during scan)
+ * - Key Inputs (Rows):      Port 2 (P2.4..P2.7 with P2UR pull-up enabled)
  * ========================================================================= */
 
 sfr P2UR_REG = 0xF3; /* Port 2 Pull-up Register */
@@ -22,7 +24,7 @@ sbit PIN_HW_DIG2    = P5^1; /* Q2 (Hour Units + Colon) */
 sbit PIN_HW_DIG3    = P5^2; /* Q3 (Minute Tens) */
 sbit PIN_HW_DIG4    = P5^3; /* Q4 (Minute Units) */
 
-/* Button Matrix Pins: Rows on Port 2 (Outputs), Columns on Port 4 (Inputs) */
+/* Button Matrix Pins: Rows on Port 2 (Inputs), Columns on Port 4 (Outputs) */
 sbit PIN_HW_ROW0    = P2^4; /* Row 0: SW3, SW6 */
 sbit PIN_HW_ROW1    = P2^5; /* Row 1: SW10 */
 sbit PIN_HW_ROW2    = P2^6; /* Row 2: SW11..14 (Inactive) */
@@ -47,7 +49,7 @@ static unsigned char s_sim_sw16_pressed = 0;
 static void delay_settle(void)
 {
     volatile unsigned int d;
-    for (d = 0; d < 150; d++); /* ~100us settling time for RC line capacitance */
+    for (d = 0; d < 100; d++); /* Settling time for matrix capacitance */
 }
 
 void GPIO_Init(void)
@@ -56,29 +58,29 @@ void GPIO_Init(void)
      * Port Mode Configurations:
      * - P0M: Bit 3 (0x08) = Output for LED D4
      * - P1M: Bit 0 (0x01) = Output for Buzzer, Bits 4,5 (0x00) = I2C released (Input/High-Z)
-     * - P2M: Bits 4..7 (0xF0) = Output for Button Matrix Rows
+     * - P2M: Bits 4..7 (0x00) = Input for Button Matrix Rows (with P2UR Pull-up)
      * - P3M: 0xFF = Output for 7-Segment Segments (P3.0 -> P3.7)
-     * - P4M: Bits 4..7 (0x00) = Input for Button Matrix Columns
+     * - P4M: Bits 4..7 (0xF0) = Output for Button Matrix Columns (driven LOW during scan)
      * - P5M: Bits 0..3 (0x0F) = Output for Digits Q1..Q4 (P5.0 -> P5.3)
      */
     P0M |= 0x08; /* P0.3 Output (LED D4) */
     P1M |= 0x01; /* P1.0 Output (Buzzer) */
-    P2M |= 0xF0; /* P2.4..P2.7 as Outputs (Matrix Rows) */
+    P2M &= ~0xF0;/* P2.4..P2.7 as Inputs (Matrix Rows) */
     P3M  = 0xFF; /* Port 3 7-Segment Output */
-    P4M &= ~0xF0;/* P4.4..P4.7 as Inputs (Matrix Columns) */
+    P4M |= 0xF0; /* P4.4..P4.7 as Outputs (Matrix Columns) */
     P5M |= 0x0F; /* Port 5 Digit Select Output */
 
-    /* Enable 100k Pull-ups on Column Inputs (P4.4..P4.7 via P4UR: 0xF5) */
-    P4UR_REG |= 0xF0;
+    /* Enable 100k Pull-ups on Row Inputs (P2.4..P2.7 via P2UR: 0xF3) */
+    P2UR_REG |= 0xF0;
 
-    /* Set ALL button rows to idle HIGH (Inactive) */
-    P2 |= 0xF0;
+    /* Set Column Scan Outputs to idle HIGH (Inactive) */
+    P4 |= 0xF0;
 
-    /* Set Column input lines High */
-    PIN_HW_COL0 = 1;
-    PIN_HW_COL1 = 1;
-    PIN_HW_COL2 = 1;
-    PIN_HW_COL3 = 1;
+    /* Set Row input lines latch HIGH */
+    PIN_HW_ROW0 = 1;
+    PIN_HW_ROW1 = 1;
+    PIN_HW_ROW2 = 1;
+    PIN_HW_ROW3 = 1;
 
     /* Reset simulation flags */
     s_sim_sw3_pressed = 0;
@@ -137,7 +139,8 @@ void GPIO_SelectDisplayDigit(unsigned char digit_index)
 }
 
 /* =========================================================================
- * Button Matrix Scanning with Adequate Settling Time
+ * Button Matrix Scanning (Official SONiX EVK Reference)
+ * Col Output LOW -> Read Row Input with P2UR pull-up
  * ========================================================================= */
 
 Pin_State_t GPIO_ReadButton_SW3(void)
@@ -145,18 +148,18 @@ Pin_State_t GPIO_ReadButton_SW3(void)
     Pin_State_t state;
     if (s_sim_sw3_pressed) return PIN_STATE_LOW;
 
-    /* Ensure all rows idle HIGH */
-    P2 |= 0xF0;
+    /* Ensure all columns idle HIGH */
+    P4 |= 0xF0;
 
-    /* Pull Row 0 (P2.4) LOW */
-    PIN_HW_ROW0 = 0;
+    /* Drive Column 0 (P4.4) LOW */
+    PIN_HW_COL0 = 0;
     delay_settle();
 
-    /* Read Column 0 (P4.4) / Col 1 (P4.5) / Col 2 (P4.6) for SW3 */
-    state = (PIN_HW_COL0 == 0 || PIN_HW_COL1 == 0 || PIN_HW_COL2 == 0) ? PIN_STATE_LOW : PIN_STATE_HIGH;
+    /* Read Row 0 (P2.4) */
+    state = (PIN_HW_ROW0 == 0) ? PIN_STATE_LOW : PIN_STATE_HIGH;
 
-    /* Restore Row 0 to HIGH */
-    PIN_HW_ROW0 = 1;
+    /* Restore Column 0 to HIGH */
+    PIN_HW_COL0 = 1;
 
     return state;
 }
@@ -166,16 +169,16 @@ Pin_State_t GPIO_ReadButton_SW6(void)
     Pin_State_t state;
     if (s_sim_sw6_pressed) return PIN_STATE_LOW;
 
-    P2 |= 0xF0;
+    P4 |= 0xF0;
 
-    /* Pull Row 0 (P2.4) LOW */
-    PIN_HW_ROW0 = 0;
+    /* Drive Column 3 (P4.7) LOW */
+    PIN_HW_COL3 = 0;
     delay_settle();
 
-    /* Read Column 3 (P4.7) */
-    state = (PIN_HW_COL3 == 0) ? PIN_STATE_LOW : PIN_STATE_HIGH;
+    /* Read Row 0 (P2.4) */
+    state = (PIN_HW_ROW0 == 0) ? PIN_STATE_LOW : PIN_STATE_HIGH;
 
-    PIN_HW_ROW0 = 1;
+    PIN_HW_COL3 = 1;
 
     return state;
 }
@@ -185,16 +188,16 @@ Pin_State_t GPIO_ReadButton_SW10(void)
     Pin_State_t state;
     if (s_sim_sw10_pressed) return PIN_STATE_LOW;
 
-    P2 |= 0xF0;
+    P4 |= 0xF0;
 
-    /* Pull Row 1 (P2.5) LOW */
-    PIN_HW_ROW1 = 0;
+    /* Drive Column 3 (P4.7) LOW */
+    PIN_HW_COL3 = 0;
     delay_settle();
 
-    /* Read Column 3 (P4.7) */
-    state = (PIN_HW_COL3 == 0) ? PIN_STATE_LOW : PIN_STATE_HIGH;
+    /* Read Row 1 (P2.5) */
+    state = (PIN_HW_ROW1 == 0) ? PIN_STATE_LOW : PIN_STATE_HIGH;
 
-    PIN_HW_ROW1 = 1;
+    PIN_HW_COL3 = 1;
 
     return state;
 }
@@ -204,16 +207,16 @@ Pin_State_t GPIO_ReadButton_SW16(void)
     Pin_State_t state;
     if (s_sim_sw16_pressed) return PIN_STATE_LOW;
 
-    P2 |= 0xF0;
+    P4 |= 0xF0;
 
-    /* Pull Row 3 (P2.7) LOW */
-    PIN_HW_ROW3 = 0;
+    /* Drive Column 0 (P4.4) LOW */
+    PIN_HW_COL0 = 0;
     delay_settle();
 
-    /* Read Column 0 (P4.4) */
-    state = (PIN_HW_COL0 == 0) ? PIN_STATE_LOW : PIN_STATE_HIGH;
+    /* Read Row 3 (P2.7) */
+    state = (PIN_HW_ROW3 == 0) ? PIN_STATE_LOW : PIN_STATE_HIGH;
 
-    PIN_HW_ROW3 = 1;
+    PIN_HW_COL0 = 1;
 
     return state;
 }
