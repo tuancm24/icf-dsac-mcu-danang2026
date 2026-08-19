@@ -14,9 +14,9 @@ typedef enum
     BUZZER_STATE_ALARM
 } Buzzer_State_t;
 
-static Buzzer_State_t s_buzzer_state = BUZZER_STATE_IDLE;
-static unsigned long s_state_start_tick = 0;
-static unsigned char s_alarm_pin_phase = 0; /* 1 = ON, 0 = OFF */
+static Buzzer_State_t xdata s_buzzer_state = BUZZER_STATE_IDLE;
+static unsigned long xdata s_state_start_tick = 0;
+static unsigned char xdata s_alarm_pin_phase = 0; /* 1 = ON, 0 = OFF */
 
 void Buzzer_Init(void)
 {

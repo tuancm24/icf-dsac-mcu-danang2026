@@ -7,9 +7,9 @@
  * Idempotent Mode Control & Drift-Free Phase Timing (Contract v2.7)
  * ========================================================================= */
 
-static LED_Mode_t s_led_mode = LED_MODE_OFF;
-static unsigned long s_mode_start_tick = 0;
-static unsigned char s_blink_state = 0; /* 1 = ON, 0 = OFF */
+static LED_Mode_t xdata s_led_mode = LED_MODE_OFF;
+static unsigned long xdata s_mode_start_tick = 0;
+static unsigned char xdata s_blink_state = 0; /* 1 = ON, 0 = OFF */
 
 void LED_Init(void)
 {

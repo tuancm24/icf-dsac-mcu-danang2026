@@ -16,12 +16,12 @@ typedef struct
     unsigned char last_raw_state;
 } Button_State_t;
 
-static Button_State_t s_buttons[BUTTON_ID_COUNT];
-static Button_Event_t s_event_queue[BUTTON_EVENT_QUEUE_SIZE];
-static unsigned char s_queue_head = 0;
-static unsigned char s_queue_tail = 0;
-static unsigned char s_queue_count = 0;
-static unsigned long s_last_scan_tick = 0;
+static Button_State_t xdata s_buttons[BUTTON_ID_COUNT];
+static Button_Event_t xdata s_event_queue[BUTTON_EVENT_QUEUE_SIZE];
+static unsigned char xdata s_queue_head = 0;
+static unsigned char xdata s_queue_tail = 0;
+static unsigned char xdata s_queue_count = 0;
+static unsigned long xdata s_last_scan_tick = 0;
 
 static void Button_EnqueueEvent(Button_Event_t event)
 {

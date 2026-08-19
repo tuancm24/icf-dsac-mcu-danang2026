@@ -16,12 +16,12 @@
 
 void main(void)
 {
-    unsigned char saved_h = 0;
-    unsigned char saved_m = 0;
-    unsigned char alarm_valid;
-    unsigned char alarm_match_latched;
-    unsigned long last_clock_tick = 0;
-    Button_Event_t btn_event;
+    unsigned char xdata saved_h = 0;
+    unsigned char xdata saved_m = 0;
+    unsigned char xdata alarm_valid;
+    unsigned char xdata alarm_match_latched;
+    unsigned long xdata last_clock_tick = 0;
+    Button_Event_t xdata btn_event;
 
     /* 1. Master Platform Initialization */
     Board_Init();
@@ -83,7 +83,7 @@ void main(void)
      * ===================================================================== */
     while (1)
     {
-        unsigned long now = Timer_GetTickMs();
+        unsigned long xdata now = Timer_GetTickMs();
 
         /* Feed Watchdog (Platform wrapper) */
         Board_FeedWatchdog();
