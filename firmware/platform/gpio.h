@@ -13,14 +13,6 @@ typedef enum
     PIN_STATE_HIGH = 1
 } Pin_State_t;
 
-typedef enum
-{
-    PIN_MODE_INPUT_PULLUP = 0,
-    PIN_MODE_INPUT_FLOATING,
-    PIN_MODE_OUTPUT_PP,
-    PIN_MODE_OUTPUT_OD
-} Pin_Mode_t;
-
 /* Initialize GPIO ports for all peripherals */
 void GPIO_Init(void);
 
@@ -49,6 +41,5 @@ void GPIO_SimulateButtonPress(unsigned char button_id, unsigned char is_pressed)
 void GPIO_SetI2C_SCL(Pin_State_t state);
 void GPIO_SetI2C_SDA(Pin_State_t state);
 Pin_State_t GPIO_ReadI2C_SDA(void);
-void GPIO_SetI2C_SDA_Mode(Pin_Mode_t mode);
 
 #endif /* GPIO_H */

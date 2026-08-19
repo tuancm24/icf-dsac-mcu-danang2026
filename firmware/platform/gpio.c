@@ -286,16 +286,3 @@ Pin_State_t GPIO_ReadI2C_SDA(void)
 {
     return (PIN_HW_I2C_SDA == 1) ? PIN_STATE_HIGH : PIN_STATE_LOW;
 }
-
-void GPIO_SetI2C_SDA_Mode(Pin_Mode_t mode)
-{
-    if (mode == PIN_MODE_INPUT_PULLUP || mode == PIN_MODE_INPUT_FLOATING)
-    {
-        P1M &= ~0x20;       /* Set P1.5 as Input / High-Z */
-        PIN_HW_I2C_SDA = 1;
-    }
-    else
-    {
-        P1M |= 0x20;        /* Set P1.5 as Output */
-    }
-}
