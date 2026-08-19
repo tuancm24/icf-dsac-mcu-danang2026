@@ -103,13 +103,15 @@ void Timer0_ISR(void) interrupt 1
     /*
      * Driver-owned blink phase service. 10 ms divides the official 500 ms
      * half-period exactly and keeps Application independent of blink timing.
-     * Display_UpdateBlinkState() retains its existing absolute-tick algorithm.
+     * Pass the already-coherent ISR-owned tick snapshot into the Display service.
+     * This preserves the existing absolute-tick blink algorithm without calling
+     * the foreground-safe Timer_GetTickMs() from interrupt context.
      */
     s_display_blink_elapsed_ms++;
     if (s_display_blink_elapsed_ms >= 10U)
     {
         s_display_blink_elapsed_ms = 0;
-        Display_UpdateBlinkState();
+        Display_UpdateBlinkStateAtTick(s_system_tick_ms);
     }
 #endif
 }

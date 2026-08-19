@@ -114,16 +114,12 @@ void Display_SetBlinkMode(Display_BlinkMode_t mode)
     }
 }
 
-void Display_UpdateBlinkState(void)
+static void Display_ApplyBlinkTick(unsigned long current_tick)
 {
-    unsigned long current_tick;
-
     if (!s_initialized)
     {
         return;
     }
-
-    current_tick = Timer_GetTickMs();
 
     if (s_blink_mode != DISPLAY_BLINK_NONE)
     {
@@ -136,6 +132,20 @@ void Display_UpdateBlinkState(void)
         s_blink_phase = 1;
     }
 }
+
+#ifndef TEST_BUILD
+void Display_UpdateBlinkStateAtTick(unsigned long current_tick)
+{
+    /* Production ISR path: tick is supplied by Timer0_ISR after the 1 ms step. */
+    Display_ApplyBlinkTick(current_tick);
+}
+#else
+void Display_UpdateBlinkState(void)
+{
+    /* Existing test path remains foreground-safe and uses the atomic getter. */
+    Display_ApplyBlinkTick(Timer_GetTickMs());
+}
+#endif
 
 void Display_Clear(void)
 {

@@ -27,8 +27,17 @@ void Display_SetColon(unsigned char enable);
 /* Set blinking mode for setup states */
 void Display_SetBlinkMode(Display_BlinkMode_t mode);
 
-/* Update blinking timer phase (called every 1ms/10ms system tick) */
+/*
+ * Driver/Platform-owned blink timing service.
+ * Production Timer ISR supplies its already-coherent millisecond tick so this
+ * path never re-enters Timer_GetTickMs() from interrupt context.
+ */
+#ifndef TEST_BUILD
+void Display_UpdateBlinkStateAtTick(unsigned long current_tick);
+#else
+/* Test-only foreground wrapper retained for existing Display unit tests. */
 void Display_UpdateBlinkState(void);
+#endif
 
 /* Scan one digit of the multiplexed display (called in 1ms/2ms Timer ISR) */
 void Display_ScanRoutine(void);
