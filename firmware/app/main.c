@@ -19,7 +19,6 @@ void main(void)
     unsigned char saved_h = 0;
     unsigned char saved_m = 0;
     unsigned long last_clock_tick = 0;
-    unsigned long last_display_scan_tick = 0;
     Button_Event_t btn_event;
 
     /* 1. Master Platform Initialization */
@@ -49,7 +48,6 @@ void main(void)
     LED_SetMode(LED_MODE_OFF);
 
     last_clock_tick = Timer_GetTickMs();
-    last_display_scan_tick = Timer_GetTickMs();
 
     /* =====================================================================
      * 6. Cooperative Foreground Execution Loop (Section 7 Processing Order)
@@ -72,16 +70,8 @@ void main(void)
         Button_Process();
         Buzzer_Process();
         LED_Process();
-        Display_UpdateBlinkState();
 
-        /* Step C: Multiplex 7-Segment Display (every 2ms) */
-        if (Timer_HasElapsed(last_display_scan_tick, DISPLAY_SCAN_DIGIT_INTERVAL_MS))
-        {
-            last_display_scan_tick = now;
-            Display_ScanRoutine();
-        }
-
-        /* Step D: Drain Button Events */
+        /* Step C: Drain Button Events */
         btn_event = Button_GetEvent();
         if (btn_event != BUTTON_EVENT_NONE)
         {
