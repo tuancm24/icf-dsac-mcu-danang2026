@@ -26,9 +26,9 @@ void Timer_Init(void)
 {
     /* 1. Configure Timer 0 in Mode 1 (16-bit up-counting timer) */
     TMOD &= 0xF0;       /* Clear T0 mode bits (T0M1, T0M0, T0CT, T0GATE) */
-    TMOD |= 0x01;       /* T0M0 = 1, T0M1 = 0: Mode 1 (16-bit timer), clock from fcpu/12 */
+    TMOD |= 0x01;       /* T0M0 = 1, T0M1 = 0: Mode 1 (16-bit timer), clock from Fcpu/12 */
 
-    /* 2. Load 1ms Initial Reload Value (0xFC18 for 12MHz FOSC) */
+    /* 2. Load ~1 ms initial reload value (0xF595 for 32 MHz IHRC, Fcpu/12) */
     TH0_REG = TIMER0_RELOAD_TH;
     TL0_REG = TIMER0_RELOAD_TL;
 
