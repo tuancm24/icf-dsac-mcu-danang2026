@@ -1,4 +1,7 @@
 #include "timer.h"
+#ifndef TEST_BUILD
+#include "display.h"
+#endif
 #include <SN8F5708.H>
 
 /* =========================================================================
@@ -12,6 +15,13 @@ sbit EAL_BIT = 0xA8^7; /* Global Interrupt Enable Bit (IEN0.7 / EAL) */
 
 static volatile unsigned long s_system_tick_ms = 0;
 
+#ifndef TEST_BUILD
+/* Production-only 2 ms divider for deterministic 4-digit Display scanning. */
+static unsigned char s_display_scan_elapsed_ms = 0;
+/* 10 ms keeps the existing tick-derived blink semantics with bounded ISR work. */
+static unsigned char s_display_blink_elapsed_ms = 0;
+#endif
+
 void Timer_Init(void)
 {
     /* 1. Configure Timer 0 in Mode 1 (16-bit up-counting timer) */
@@ -24,6 +34,12 @@ void Timer_Init(void)
 
     /* 3. Reset 32-bit System Tick Counter */
     s_system_tick_ms = 0;
+
+#ifndef TEST_BUILD
+    /* Reinitialization must also restart the Display scan cadence deterministically. */
+    s_display_scan_elapsed_ms = 0;
+    s_display_blink_elapsed_ms = 0;
+#endif
 
     /* 4. Enable Timer 0 Interrupt & Start Timer */
     ET0 = 1;            /* Enable Timer 0 interrupt */
@@ -69,6 +85,33 @@ void Timer0_ISR(void) interrupt 1
 
     /* Call platform tick handler */
     Timer_ISR_Handler();
+
+#ifndef TEST_BUILD
+    /*
+     * TIM-05/TIM-11: production Display multiplexing is hardware-timed.
+     * Display_ScanRoutine() self-gates until Display_Init() completes.
+     * Keep Timer_ISR_Handler() pure so existing software tests retain their
+     * one-call == one-millisecond tick semantics.
+     */
+    s_display_scan_elapsed_ms++;
+    if (s_display_scan_elapsed_ms >= DISPLAY_SCAN_DIGIT_INTERVAL_MS)
+    {
+        s_display_scan_elapsed_ms = 0;
+        Display_ScanRoutine();
+    }
+
+    /*
+     * Driver-owned blink phase service. 10 ms divides the official 500 ms
+     * half-period exactly and keeps Application independent of blink timing.
+     * Display_UpdateBlinkState() retains its existing absolute-tick algorithm.
+     */
+    s_display_blink_elapsed_ms++;
+    if (s_display_blink_elapsed_ms >= 10U)
+    {
+        s_display_blink_elapsed_ms = 0;
+        Display_UpdateBlinkState();
+    }
+#endif
 }
 
 /*
