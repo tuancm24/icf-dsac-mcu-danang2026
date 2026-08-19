@@ -2,6 +2,9 @@
 #include "gpio.h"
 #include "timer.h"
 
+/* Global Interrupt Enable Bit (IEN0.7 / EAL), local to this Driver module. */
+sbit DISPLAY_EAL_BIT = 0xA8^7;
+
 /* =========================================================================
  * 4-Digit 7-Segment Display Driver Implementation (SONiX SN8F5708 EVK)
  * Time Multiplexing & Segment Decoding (Contract v2.7)
@@ -21,16 +24,23 @@ static const unsigned char s_font_7seg[10] = {
     0x6F  /* 9: a,b,c,d,f,g */
 };
 
-/* Display buffer for 4 digits (0: H1, 1: H0, 2: M1, 3: M0) */
-static unsigned char s_digits[4] = {0, 0, 0, 0};
-static unsigned char s_colon_enabled = 1;
-static Display_BlinkMode_t s_blink_mode = DISPLAY_BLINK_NONE;
-static unsigned char s_blink_phase = 1; /* 1 = Visible (ON), 0 = Hidden (OFF) */
-static unsigned long s_mode_start_tick = 0;
-static unsigned char s_scan_index = 0;
+/* Display state shared with the asynchronous scan/blink service. */
+static volatile unsigned char s_digits[4] = {0, 0, 0, 0};
+static volatile unsigned char s_colon_enabled = 1;
+/* Keep mode byte-sized so mode reads/writes are atomic on C51. */
+static volatile unsigned char s_blink_mode = DISPLAY_BLINK_NONE;
+static volatile unsigned char s_blink_phase = 1; /* 1 = Visible (ON), 0 = Hidden (OFF) */
+static volatile unsigned long s_mode_start_tick = 0;
+static volatile unsigned char s_scan_index = 0;
+
+/* Timer may already run before Display_Init(); async Display service stays gated. */
+static volatile unsigned char s_initialized = 0;
 
 void Display_Init(void)
 {
+    /* Publish disabled state before rebuilding shared Display state. */
+    s_initialized = 0;
+
     s_digits[0] = 0;
     s_digits[1] = 0;
     s_digits[2] = 0;
@@ -43,17 +53,39 @@ void Display_Init(void)
 
     GPIO_SelectDisplayDigit(0xFF);
     GPIO_SetDisplaySegments(0x00);
+
+    /* Publish ready only after all logical/GPIO Display state is coherent. */
+    s_initialized = 1;
 }
 
 void Display_SetTime(unsigned char hour, unsigned char minute)
 {
+    unsigned char d0;
+    unsigned char d1;
+    unsigned char d2;
+    unsigned char d3;
+    unsigned char ea_state;
+
     if (hour > 23)   hour = 23;
     if (minute > 59) minute = 59;
 
-    s_digits[0] = hour / 10;
-    s_digits[1] = hour % 10;
-    s_digits[2] = minute / 10;
-    s_digits[3] = minute % 10;
+    /* Perform formatting before the very short critical publication section. */
+    d0 = hour / 10;
+    d1 = hour % 10;
+    d2 = minute / 10;
+    d3 = minute % 10;
+
+    /*
+     * TIM-07: publish HH:MM atomically with respect to Timer ISR scanning.
+     * Preserve and restore the previous global interrupt-enable state.
+     */
+    ea_state = DISPLAY_EAL_BIT;
+    DISPLAY_EAL_BIT = 0;
+    s_digits[0] = d0;
+    s_digits[1] = d1;
+    s_digits[2] = d2;
+    s_digits[3] = d3;
+    DISPLAY_EAL_BIT = ea_state;
 }
 
 void Display_SetColon(unsigned char enable)
@@ -63,17 +95,35 @@ void Display_SetColon(unsigned char enable)
 
 void Display_SetBlinkMode(Display_BlinkMode_t mode)
 {
-    if (s_blink_mode != mode)
+    unsigned char requested_mode = (unsigned char)mode;
+
+    if (s_blink_mode != requested_mode)
     {
-        s_blink_mode = mode;
+        unsigned long start_tick = Timer_GetTickMs();
+        unsigned char ea_state = DISPLAY_EAL_BIT;
+
+        /*
+         * TIM-07: mode, phase and 32-bit anchor become visible as one coherent
+         * update to the asynchronous Display service.
+         */
+        DISPLAY_EAL_BIT = 0;
+        s_blink_mode = requested_mode;
         s_blink_phase = 1; /* Reset phase to visible immediately */
-        s_mode_start_tick = Timer_GetTickMs();
+        s_mode_start_tick = start_tick;
+        DISPLAY_EAL_BIT = ea_state;
     }
 }
 
 void Display_UpdateBlinkState(void)
 {
-    unsigned long current_tick = Timer_GetTickMs();
+    unsigned long current_tick;
+
+    if (!s_initialized)
+    {
+        return;
+    }
+
+    current_tick = Timer_GetTickMs();
 
     if (s_blink_mode != DISPLAY_BLINK_NONE)
     {
@@ -97,6 +147,11 @@ void Display_ScanRoutine(void)
 {
     unsigned char seg_data = 0x00;
     unsigned char show_digit = 1;
+
+    if (!s_initialized)
+    {
+        return;
+    }
 
     /* 1. Turn off all digits to eliminate ghosting during transition */
     GPIO_SelectDisplayDigit(0xFF);
