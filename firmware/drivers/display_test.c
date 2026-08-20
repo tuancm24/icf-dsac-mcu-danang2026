@@ -1,12 +1,11 @@
 #include "display.h"
 #include "timer.h"
 #include "gpio.h"
-#include "board.h"
 #include <SN8F5708.H>
 
 /* =========================================================================
  * 4-Digit 7-Segment Display Verification & Hardware Board Test Runner
- * Target MCU: SONiX SN8F5708 EVK
+ * Target MCU: SONiX SN8F5708 EVK (Real-Time Hardware Scanning)
  * ========================================================================= */
 
 volatile unsigned char test1_init_pass = 0;
@@ -16,7 +15,7 @@ volatile unsigned char test4_blink_hours_pass = 0;
 volatile unsigned char test5_blink_minutes_pass = 0;
 volatile unsigned char test6_colon_control_pass = 0;
 
-static void advance_ms(unsigned int ms)
+static void advance_sim_ms(unsigned int ms)
 {
     unsigned int k;
     for (k = 0; k < ms; k++)
@@ -27,12 +26,13 @@ static void advance_ms(unsigned int ms)
 
 void main(void)
 {
-    unsigned long start_tick;
-    unsigned long last_scan_tick;
     unsigned char t2_pass = 1;
+    unsigned long last_scan_tick;
+    unsigned long last_mode_tick;
+    unsigned char demo_mode = 0;
 
     /* 1. Initialize hardware platform */
-    Board_FeedWatchdog();
+    WDTR = 0x5A;
     GPIO_Init();
     Timer_Init();
     Display_Init();
@@ -80,7 +80,7 @@ void main(void)
     Display_Init();
     Display_SetTime(12, 34);
     Display_SetBlinkMode(DISPLAY_BLINK_HOURS);
-    advance_ms(500); /* Advance into OFF phase (500ms) */
+    advance_sim_ms(500); /* Advance into OFF phase (500ms) */
     Display_UpdateBlinkState();
 
     Display_ScanRoutine(); /* Digit 0 (H1) -> Must be blank 0x00 */
@@ -101,7 +101,7 @@ void main(void)
     Display_Init();
     Display_SetTime(12, 34);
     Display_SetBlinkMode(DISPLAY_BLINK_MINUTES);
-    advance_ms(500); /* Advance into OFF phase (500ms) */
+    advance_sim_ms(500); /* Advance into OFF phase (500ms) */
     Display_UpdateBlinkState();
 
     Display_ScanRoutine(); /* Digit 0 (H1) -> Must be visible 0x06 */
@@ -124,28 +124,55 @@ void main(void)
     test6_colon_control_pass = (P3 == 0x5B) ? 1 : 0;
 
     /* =====================================================================
-     * SECTION B: Hardware Board Live Scanning Loop
+     * SECTION B: Real-Time Hardware Board Multi-Mode Interactive Scanning
+     * Automatically cycles through the 3 official competition modes:
+     * - Phase 0 (3s): NORMAL (12.34 steady on)
+     * - Phase 1 (3s): SET HOUR (12 blinks 1s, 34 steady on)
+     * - Phase 2 (3s): SET MINUTE (34 blinks 1s, 12 steady on)
      * ===================================================================== */
     Display_Init();
     Display_SetTime(12, 34);
     Display_SetColon(1);
     Display_SetBlinkMode(DISPLAY_BLINK_NONE);
 
-    start_tick = Timer_GetTickMs();
     last_scan_tick = Timer_GetTickMs();
+    last_mode_tick = Timer_GetTickMs();
+    demo_mode = 0;
 
     while (1)
     {
-        Board_FeedWatchdog();
+        WDTR = 0x5A;
 
-        /* 1. Multiplex 7-Segment display every 2ms */
+        /* Quét màn hình LED 7 đoạn đúng chu kỳ 2ms thực tế */
         if (Timer_HasElapsed(last_scan_tick, 2))
         {
             last_scan_tick = Timer_GetTickMs();
             Display_ScanRoutine();
         }
 
-        /* 2. Update display blink state machine */
+        /* Cập nhật nhấp nháy theo Timer phần cứng */
         Display_UpdateBlinkState();
+
+        /* Đổi chế độ đúng mỗi 3000ms (3 giây thực tế) */
+        if (Timer_HasElapsed(last_mode_tick, 3000UL))
+        {
+            last_mode_tick = Timer_GetTickMs();
+            demo_mode = (demo_mode + 1) % 3;
+
+            switch (demo_mode)
+            {
+                case 0:
+                    Display_SetBlinkMode(DISPLAY_BLINK_NONE);
+                    break;
+                case 1:
+                    Display_SetBlinkMode(DISPLAY_BLINK_HOURS);
+                    break;
+                case 2:
+                    Display_SetBlinkMode(DISPLAY_BLINK_MINUTES);
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }

@@ -5,6 +5,7 @@
 /* =========================================================================
  * Buzzer Driver Implementation (SONiX SN8F5708 EVK)
  * Acoustic Priority Rules & Non-blocking State Machine (Contract v2.7)
+ * Optimized without 32-bit division library
  * ========================================================================= */
 
 typedef enum
@@ -95,13 +96,21 @@ void Buzzer_Process(void)
                 break;
             }
 
-            /* 2. Drift-free 500ms ON / 500ms OFF phase calculation (TIM-12) */
+            /* 2. Drift-free 500ms ON / 500ms OFF phase calculation without 32-bit division */
             {
-                unsigned char expected_phase = ((elapsed / BUZZER_ALARM_CYCLE_ON_MS) % 2 == 0) ? 1 : 0;
+                unsigned int rem = (unsigned int)elapsed;
+                unsigned char expected_phase = 1;
+
+                while (rem >= (unsigned int)BUZZER_ALARM_CYCLE_ON_MS)
+                {
+                    expected_phase ^= 1;
+                    rem -= (unsigned int)BUZZER_ALARM_CYCLE_ON_MS;
+                }
+
                 if (expected_phase != s_alarm_pin_phase)
                 {
                     s_alarm_pin_phase = expected_phase;
-                    GPIO_SetBuzzer(s_alarm_pin_phase ? PIN_STATE_HIGH : PIN_STATE_LOW);
+                    GPIO_SetBuzzer(expected_phase ? PIN_STATE_HIGH : PIN_STATE_LOW);
                 }
             }
             break;

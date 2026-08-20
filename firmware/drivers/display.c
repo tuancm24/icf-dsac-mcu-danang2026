@@ -10,8 +10,8 @@ sbit DISPLAY_EAL_BIT = 0xA8^7;
  * Time Multiplexing & Segment Decoding (Contract v2.7)
  * ========================================================================= */
 
-/* 7-Segment Font Table (0-9): Bit 0=A, 1=B, 2=C, 3=D, 4=E, 5=F, 6=G, 7=DP */
-static const unsigned char s_font_7seg[10] = {
+/* 7-Segment Font Table (0-9) stored directly in Flash ROM (code) */
+static const unsigned char code s_font_7seg[10] = {
     0x3F, /* 0: a,b,c,d,e,f */
     0x06, /* 1: b,c */
     0x5B, /* 2: a,b,d,e,g */
@@ -128,8 +128,16 @@ void Display_UpdateBlinkState(void)
     if (s_blink_mode != DISPLAY_BLINK_NONE)
     {
         unsigned long elapsed = current_tick - s_mode_start_tick;
-        /* TIM-12: Drift-free 500ms phase calculation */
-        s_blink_phase = ((elapsed / BLINK_HALF_PERIOD_MS) % 2 == 0) ? 1 : 0;
+        unsigned int el_ms = (unsigned int)elapsed;
+        unsigned char phase = 1;
+
+        /* Drift-free 500ms phase calculation without 32-bit division library */
+        while (el_ms >= (unsigned int)BLINK_HALF_PERIOD_MS)
+        {
+            phase ^= 1;
+            el_ms -= (unsigned int)BLINK_HALF_PERIOD_MS;
+        }
+        s_blink_phase = phase;
     }
     else
     {
@@ -139,66 +147,75 @@ void Display_UpdateBlinkState(void)
 
 void Display_Clear(void)
 {
+    unsigned char ea_state = DISPLAY_EAL_BIT;
+    DISPLAY_EAL_BIT = 0;
+    s_digits[0] = 0;
+    s_digits[1] = 0;
+    s_digits[2] = 0;
+    s_digits[3] = 0;
+    s_colon_enabled = 0;
+    s_blink_mode = DISPLAY_BLINK_NONE;
+    s_blink_phase = 1;
+    DISPLAY_EAL_BIT = ea_state;
+
     GPIO_SelectDisplayDigit(0xFF);
     GPIO_SetDisplaySegments(0x00);
 }
 
 void Display_ScanRoutine(void)
 {
-    unsigned char seg_data = 0x00;
-    unsigned char show_digit = 1;
+    unsigned char digit_idx;
+    unsigned char digit_val;
+    unsigned char segment_bitmap;
+    unsigned char is_visible;
 
     if (!s_initialized)
     {
         return;
     }
 
-    /* 1. Turn off all digits to eliminate ghosting during transition */
-    GPIO_SelectDisplayDigit(0xFF);
+    digit_idx = s_scan_index;
 
-    /* 2. Check blinking suppression rules for current digit */
+    /* Advance scan index for next call (0 -> 1 -> 2 -> 3 -> 0) */
+    s_scan_index = (s_scan_index + 1) % 4;
+
+    /* Determine blinking visibility for this digit */
+    is_visible = 1;
     if (s_blink_phase == 0)
     {
-        if (s_blink_mode == DISPLAY_BLINK_HOURS && (s_scan_index == 0 || s_scan_index == 1))
+        if (s_blink_mode == DISPLAY_BLINK_HOURS && (digit_idx == 0 || digit_idx == 1))
         {
-            show_digit = 0; /* Blank HH */
+            is_visible = 0;
         }
-        else if (s_blink_mode == DISPLAY_BLINK_MINUTES && (s_scan_index == 2 || s_scan_index == 3))
+        else if (s_blink_mode == DISPLAY_BLINK_MINUTES && (digit_idx == 2 || digit_idx == 3))
         {
-            show_digit = 0; /* Blank MM */
-        }
-        else if (s_blink_mode == DISPLAY_BLINK_ALL)
-        {
-            show_digit = 0; /* Blank All */
+            is_visible = 0;
         }
     }
 
-    /* 3. Decode digit pattern if visible */
-    if (show_digit)
+    if (!is_visible)
     {
-        unsigned char digit_val = s_digits[s_scan_index];
-        if (digit_val < 10)
-        {
-            seg_data = s_font_7seg[digit_val];
-        }
-
-        /* Add colon / decimal point to Digit 1 (HH units) */
-        if (s_scan_index == 1 && s_colon_enabled)
-        {
-            seg_data |= 0x80; /* Enable DP */
-        }
+        /* Blank the digit (turn off all segments) */
+        GPIO_SelectDisplayDigit(0xFF);
+        GPIO_SetDisplaySegments(0x00);
+        return;
     }
 
-    /* 4. Output segment data to GPIO */
-#if DISPLAY_COMMON_ANODE
-    GPIO_SetDisplaySegments(~seg_data); /* Invert for Common Anode */
-#else
-    GPIO_SetDisplaySegments(seg_data);  /* Direct for Common Cathode (3461AS) */
-#endif
+    /* Decode segment bitmap from font table */
+    digit_val = s_digits[digit_idx];
+    if (digit_val > 9) digit_val = 0;
+    segment_bitmap = s_font_7seg[digit_val];
 
-    /* 5. Activate current digit */
-    GPIO_SelectDisplayDigit(s_scan_index);
+    /* Append colon / dot point on Digit 1 (Hour Units DP) */
+    if (digit_idx == 1 && s_colon_enabled)
+    {
+        segment_bitmap |= 0x80; /* Bit 7 = DP */
+    }
 
-    /* 6. Advance to next digit index */
-    s_scan_index = (s_scan_index + 1) % 4;
+    /* Blank previous digit before switching to prevent ghosting */
+    GPIO_SelectDisplayDigit(0xFF);
+
+    /* Output new segment pattern and enable active digit */
+    GPIO_SetDisplaySegments(segment_bitmap);
+    GPIO_SelectDisplayDigit(digit_idx);
 }

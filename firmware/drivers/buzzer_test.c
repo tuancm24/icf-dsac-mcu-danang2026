@@ -1,11 +1,10 @@
 #include "buzzer.h"
 #include "timer.h"
 #include "gpio.h"
-#include "board.h"
 #include <SN8F5708.H>
 
 /* =========================================================================
- * Buzzer Driver Module Comprehensive Verification & Test Runner
+ * Buzzer & LED D4 Module Hardware Verification & Test Runner
  * Target MCU: SONiX SN8F5708 EVK
  * ========================================================================= */
 
@@ -29,8 +28,10 @@ static void sim_advance_ms(unsigned int count)
 
 void main(void)
 {
+    unsigned long start_tick;
+
     /* 1. Initialize Hardware Platform */
-    Board_FeedWatchdog();
+    WDTR = 0x5A;
     GPIO_Init();
     Timer_Init();
     Buzzer_Init();
@@ -76,11 +77,11 @@ void main(void)
     Buzzer_Init();
     Buzzer_BeepShort();
     sim_advance_ms(200); /* 200ms elapsed */
-    Buzzer_BeepShort();  /* Refresh timer at 200ms -> should stay busy for 300ms more (until 500ms) */
-    sim_advance_ms(200); /* Total 400ms from start (200ms from refresh) */
+    Buzzer_BeepShort();  /* Refresh timer at 200ms -> should stay busy for 300ms more */
+    sim_advance_ms(200);
     if (Buzzer_IsBusy() == 1)
     {
-        sim_advance_ms(105); /* Total 505ms from start (305ms from refresh) */
+        sim_advance_ms(105);
         test4_short_refresh_pass = (Buzzer_IsBusy() == 0) ? 1 : 0;
     }
 
@@ -89,7 +90,7 @@ void main(void)
     Buzzer_BeepShort();
     sim_advance_ms(100);
     Buzzer_StartAlarm(); /* Preempts short beep */
-    sim_advance_ms(200); /* Now at 200ms into alarm */
+    sim_advance_ms(200);
     test5_alarm_preempt_short_pass = (Buzzer_IsBusy() == 1) ? 1 : 0;
 
     /* TEST 6: Key Beep during Active Alarm does NOT cancel/shorten Alarm */
@@ -109,28 +110,63 @@ void main(void)
     Buzzer_StartAlarm();
     sim_advance_ms(2000); /* 2s into alarm */
     Buzzer_StartAlarm();  /* Redundant request */
-    sim_advance_ms(3005); /* Total 5005ms from first start -> must finish, not extended to 7s */
+    sim_advance_ms(3005); /* Total 5005ms from first start -> must finish, not extended */
     test7_repeated_alarm_noop_pass = (Buzzer_IsBusy() == 0) ? 1 : 0;
 
     /* =====================================================================
-     * SECTION B: Hardware Board Execution Loop
+     * SECTION B: Hardware Board Real-Time Verification Loop
+     * Demonstrates:
+     * 1. Short keypress beep (0.3s) + LED D4 pulse
+     * 2. 2-second pause
+     * 3. 5-second continuous alarm pattern (500ms ON / 500ms OFF) + LED D4 blink
+     * 4. 3-second silence before repeat
      * ===================================================================== */
+    Buzzer_Init();
+
     while (1)
     {
-        unsigned long start_tick;
+        WDTR = 0x5A;
 
-        Board_FeedWatchdog();
-
+        /* Phase 1: Short Beep (0.3s = 300ms) */
         Buzzer_BeepShort();
         GPIO_SetLED_D4(PIN_STATE_HIGH);
 
         start_tick = Timer_GetTickMs();
-        while (!Timer_HasElapsed(start_tick, 1000))
+        while (!Timer_HasElapsed(start_tick, 2000UL))
         {
-            Board_FeedWatchdog();
+            WDTR = 0x5A;
             Buzzer_Process();
 
-            if (Timer_HasElapsed(start_tick, 300))
+            if (Timer_HasElapsed(start_tick, 300UL))
+            {
+                GPIO_SetLED_D4(PIN_STATE_LOW);
+            }
+        }
+
+        /* Phase 2: 5-Second Alarm (500ms ON / 500ms OFF) */
+        Buzzer_StartAlarm();
+        start_tick = Timer_GetTickMs();
+
+        while (!Timer_HasElapsed(start_tick, 8000UL)) /* 5s alarm + 3s pause */
+        {
+            unsigned long el;
+            WDTR = 0x5A;
+            Buzzer_Process();
+
+            el = Timer_GetTickMs() - start_tick;
+            if (el < 5000UL)
+            {
+                /* LED D4 nhấp nháy 1s (0.5s ON / 0.5s OFF) đồng bộ chu kỳ báo thức */
+                unsigned int el_ms = (unsigned int)el;
+                unsigned char led_phase = 1;
+                while (el_ms >= 500U)
+                {
+                    led_phase ^= 1;
+                    el_ms -= 500U;
+                }
+                GPIO_SetLED_D4(led_phase ? PIN_STATE_HIGH : PIN_STATE_LOW);
+            }
+            else
             {
                 GPIO_SetLED_D4(PIN_STATE_LOW);
             }

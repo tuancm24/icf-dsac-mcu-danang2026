@@ -172,11 +172,11 @@
             <UseExternalTool>0</UseExternalTool>
             <RunIndependent>0</RunIndependent>
             <UpdateFlashBeforeDebugging>0</UpdateFlashBeforeDebugging>
-            <Capability>1</Capability>
-            <DriverSelection>4104</DriverSelection>
+            <Capability>0</Capability>
+            <DriverSelection>0</DriverSelection>
           </Flash1>
           <bUseTDR>0</bUseTDR>
-          <Flash2>SNLINK\SNLINK.dll</Flash2>
+          <Flash2>SN-LINK\SN-LINK.dll</Flash2>
           <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
@@ -233,7 +233,7 @@
               <RCB>
                 <Type>0</Type>
                 <StartAddress>0x0</StartAddress>
-                <Size>0x10000</Size>
+                <Size>0x0</Size>
               </RCB>
               <RXB>
                 <Type>0</Type>
@@ -387,21 +387,6 @@
               <FilePath>.\OPTIONS_SN8F5708.A51</FilePath>
             </File>
             <File>
-              <FileName>button.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\drivers\button.c</FilePath>
-            </File>
-            <File>
-              <FileName>button_test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\drivers\button_test.c</FilePath>
-            </File>
-            <File>
-              <FileName>buzzer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\drivers\buzzer.c</FilePath>
-            </File>
-            <File>
               <FileName>gpio.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\platform\gpio.c</FilePath>
@@ -410,6 +395,26 @@
               <FileName>timer.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\platform\timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\platform\i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>button_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drivers\button_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>button.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drivers\button.c</FilePath>
+            </File>
+            <File>
+              <FileName>buzzer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drivers\buzzer.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -534,7 +539,7 @@
             <Oh166RecLen>16</Oh166RecLen>
           </OPTHX>
           <Simulator>
-            <UseSimulator>0</UseSimulator>
+            <UseSimulator>1</UseSimulator>
             <LoadApplicationAtStartup>1</LoadApplicationAtStartup>
             <RunToMain>1</RunToMain>
             <RestoreBreakpoints>1</RestoreBreakpoints>
@@ -546,7 +551,7 @@
             <RestoreSysVw>1</RestoreSysVw>
           </Simulator>
           <Target>
-            <UseTarget>1</UseTarget>
+            <UseTarget>0</UseTarget>
             <LoadApplicationAtStartup>1</LoadApplicationAtStartup>
             <RunToMain>0</RunToMain>
             <RestoreBreakpoints>1</RestoreBreakpoints>
@@ -558,7 +563,7 @@
             <RestoreSysVw>1</RestoreSysVw>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
-          <TargetSelection>10</TargetSelection>
+          <TargetSelection>12</TargetSelection>
           <SimDlls>
             <CpuDll></CpuDll>
             <CpuDllArguments></CpuDllArguments>
@@ -572,7 +577,7 @@
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
             <InitializationFile></InitializationFile>
-            <Driver>SN-LINK\SN-LINK.dll</Driver>
+            <Driver>SNLINK\SNLINK.dll</Driver>
           </TargetDlls>
         </DebugOption>
         <Utilities>
@@ -581,11 +586,11 @@
             <UseExternalTool>0</UseExternalTool>
             <RunIndependent>0</RunIndependent>
             <UpdateFlashBeforeDebugging>0</UpdateFlashBeforeDebugging>
-            <Capability>0</Capability>
-            <DriverSelection>0</DriverSelection>
+            <Capability>1</Capability>
+            <DriverSelection>4104</DriverSelection>
           </Flash1>
           <bUseTDR>0</bUseTDR>
-          <Flash2>SN-LINK\SN-LINK.dll</Flash2>
+          <Flash2>SNLINK\SNLINK.dll</Flash2>
           <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
@@ -642,7 +647,7 @@
               <RCB>
                 <Type>0</Type>
                 <StartAddress>0x0</StartAddress>
-                <Size>0x0</Size>
+                <Size>0xffff</Size>
               </RCB>
               <RXB>
                 <Type>0</Type>
@@ -796,21 +801,6 @@
               <FilePath>.\OPTIONS_SN8F5708.A51</FilePath>
             </File>
             <File>
-              <FileName>button.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\drivers\button.c</FilePath>
-            </File>
-            <File>
-              <FileName>button_test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\drivers\button_test.c</FilePath>
-            </File>
-            <File>
-              <FileName>buzzer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\drivers\buzzer.c</FilePath>
-            </File>
-            <File>
               <FileName>gpio.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\platform\gpio.c</FilePath>
@@ -819,6 +809,26 @@
               <FileName>timer.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\platform\timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\platform\i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>button_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drivers\button_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>button.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drivers\button.c</FilePath>
+            </File>
+            <File>
+              <FileName>buzzer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drivers\buzzer.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1205,21 +1215,6 @@
               <FilePath>.\OPTIONS_SN8F5708.A51</FilePath>
             </File>
             <File>
-              <FileName>button.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\drivers\button.c</FilePath>
-            </File>
-            <File>
-              <FileName>button_test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\drivers\button_test.c</FilePath>
-            </File>
-            <File>
-              <FileName>buzzer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\drivers\buzzer.c</FilePath>
-            </File>
-            <File>
               <FileName>gpio.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\platform\gpio.c</FilePath>
@@ -1228,6 +1223,26 @@
               <FileName>timer.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\platform\timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\platform\i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>button_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drivers\button_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>button.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drivers\button.c</FilePath>
+            </File>
+            <File>
+              <FileName>buzzer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drivers\buzzer.c</FilePath>
             </File>
           </Files>
         </Group>

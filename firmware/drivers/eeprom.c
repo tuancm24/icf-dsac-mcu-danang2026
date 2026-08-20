@@ -19,7 +19,12 @@
 
 #define EEPROM_DEV_ADDR_WRITE       (EEPROM_I2C_DEV_ADDR & 0xFE)
 #define EEPROM_DEV_ADDR_READ        (EEPROM_I2C_DEV_ADDR | 0x01)
-#define EEPROM_WRITE_DELAY_MS       (10)
+
+static void delay_write_cycle(void)
+{
+    volatile unsigned int d;
+    for (d = 0; d < 10000; d++); /* ~6ms internal write cycle delay @ 32MHz IHRC */
+}
 
 /* Simulation / Test Mock Hooks (Active when TEST_BUILD is defined) */
 #ifdef TEST_BUILD
@@ -75,8 +80,8 @@ static unsigned char EEPROM_WriteByte(unsigned char mem_addr, unsigned char data
         }
         I2C_Stop();
 
-        /* Wait for EEPROM internal write cycle (tWR ≈ 5ms) */
-        Timer_DelayUs(EEPROM_WRITE_DELAY_MS * 1000U);
+        /* Wait for EEPROM internal write cycle (tWR <= 5ms) */
+        delay_write_cycle();
 
         return ok;
     }
