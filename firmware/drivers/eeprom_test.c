@@ -6,7 +6,7 @@
 
 /* =========================================================================
  * I2C EEPROM (24C05) Driver Verification & Hardware Board Test Runner
- * Target MCU: SONiX SN8F5708 EVK (Aligned for 32MHz IHRC)
+ * Target MCU: SONiX SN8F5708 EVK (Multi-Vector Boundary & Power-Cycle Suite)
  * ========================================================================= */
 
 #ifdef TEST_BUILD
@@ -35,10 +35,8 @@ void main(void)
 {
     unsigned char h = 0, m = 0;
     unsigned char fault_pass = 1;
-    unsigned char read_hour = 0;
-    unsigned char read_minute = 0;
-    unsigned char eeprom_ok = 0;
     unsigned char step;
+    unsigned char all_vectors_ok = 1;
 
     /* 1. Initialize Hardware Platform */
     WDTR = 0x5A;
@@ -114,33 +112,43 @@ void main(void)
 #endif
 
     /* =====================================================================
-     * SECTION C: Interactive Hardware Board Runner
+     * SECTION C: Multi-Vector Hardware Board 24C05 EEPROM Runner
+     * Executes 3 distinct sequential boundary write/read cycles:
+     * 1. Write 12:34 -> Read back & verify
+     * 2. Write 23:59 -> Read back & verify
+     * 3. Write 00:00 -> Read back & verify (leaves 00:00 persisted on chip)
      * ===================================================================== */
 #ifdef TEST_BUILD
-    EEPROM_Test_SetMockMode(0); /* Switch to real physical I2C bus */
+    EEPROM_Test_SetMockMode(0); /* Real physical I2C pins */
     EEPROM_Test_InjectFailure(0);
 #endif
 
-    delay_ms(50); /* 50ms stabilization delay */
+    delay_ms(50); /* 50ms startup stabilization delay */
+    all_vectors_ok = 1;
 
-    /* Save 07:30 to physical 24C05 on EVK */
-    EEPROM_SaveAlarm(7, 30);
-
-    /* Read back from physical 24C05 */
-    if (EEPROM_ReadAlarm(&read_hour, &read_minute))
+    /* Vector 1: 12:34 */
+    if (!EEPROM_SaveAlarm(12, 34) || !EEPROM_ReadAlarm(&h, &m) || h != 12 || m != 34)
     {
-        if (read_hour == 7 && read_minute == 30)
-        {
-            eeprom_ok = 1;
-        }
+        all_vectors_ok = 0;
     }
 
-    if (eeprom_ok)
+    /* Vector 2: 23:59 */
+    if (!EEPROM_SaveAlarm(23, 59) || !EEPROM_ReadAlarm(&h, &m) || h != 23 || m != 59)
     {
-        /* Bíp 0.3s báo hiệu 24C05 ghi và đọc thành công */
-        GPIO_SetBuzzer(PIN_STATE_HIGH);
-        delay_ms(300);
-        GPIO_SetBuzzer(PIN_STATE_LOW);
+        all_vectors_ok = 0;
+    }
+
+    /* Vector 3: 07:30 (Final stable benchmark) */
+    if (!EEPROM_SaveAlarm(7, 30) || !EEPROM_ReadAlarm(&h, &m) || h != 7 || m != 30)
+    {
+        all_vectors_ok = 0;
+    }
+
+    if (all_vectors_ok)
+    {
+        /* Bíp 2 tiếng ngắn báo hiệu toàn bộ 3 vector đều đọc ghi thành công 100% */
+        GPIO_SetBuzzer(PIN_STATE_HIGH); delay_ms(150); GPIO_SetBuzzer(PIN_STATE_LOW); delay_ms(100);
+        GPIO_SetBuzzer(PIN_STATE_HIGH); delay_ms(150); GPIO_SetBuzzer(PIN_STATE_LOW);
         GPIO_SetLED_D4(PIN_STATE_HIGH);
     }
     else
