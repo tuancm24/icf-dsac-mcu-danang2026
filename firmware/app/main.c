@@ -22,6 +22,7 @@ void main(void)
     unsigned char xdata alarm_match_latched;
     unsigned long xdata last_clock_tick = 0;
     Button_Event_t xdata btn_event;
+    Time_t xdata display_time;
 
     /* 1. Master Platform Initialization */
     Board_Init();
@@ -85,10 +86,8 @@ void main(void)
     {
         unsigned long xdata now = Timer_GetTickMs();
 
-        /* Feed Watchdog (Platform wrapper) */
-        Board_FeedWatchdog();
 
-        /* Step A: Advance due Clock seconds */
+        /* Step A: Advance all due logical Clock seconds. */
         while ((unsigned long)(now - last_clock_tick) >= 1000UL)
         {
             last_clock_tick += 1000UL;
@@ -121,5 +120,42 @@ void main(void)
                 alarm_match_latched = 0;
             }
         }
+
+        /*
+         * Stage G: Publish logical Display output from the current/resulting
+         * FSM state. Display scan/blink timing remains Driver/Platform-owned.
+         */
+        Display_SetColon(1);
+
+        switch (FSM_GetState())
+        {
+            case FSM_NORMAL:
+                display_time = Clock_GetTime();
+                Display_SetTime(display_time.hour, display_time.minute);
+                Display_SetBlinkMode(DISPLAY_BLINK_NONE);
+                break;
+
+            case FSM_SET_TIME_HOUR:
+                display_time = Clock_GetTime();
+                Display_SetTime(display_time.hour, display_time.minute);
+                Display_SetBlinkMode(DISPLAY_BLINK_HOURS);
+                break;
+
+            case FSM_SET_TIME_MINUTE:
+                display_time = Clock_GetTime();
+                Display_SetTime(display_time.hour, display_time.minute);
+                Display_SetBlinkMode(DISPLAY_BLINK_MINUTES);
+                break;
+
+            default:
+                /*
+                 * SET_ALARM_* Display source belongs to INT06.
+                 * Do not invent alarm-edit data during INT03.
+                 */
+                break;
+        }
+
+        /* Stage H: final foreground action. */
+        Board_FeedWatchdog();
     }
 }
