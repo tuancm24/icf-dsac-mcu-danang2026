@@ -11,7 +11,7 @@
 
 /* =========================================================================
  * Production System Main Entry Point (Contract v2.7 Compliant)
- * Target MCU: SONiX SN8F5708 EVK
+ * Target MCU: SONiX SN8F5708 EVK (INT08 - Key Feedback Integration)
  * ========================================================================= */
 
 void main(void)
@@ -53,11 +53,6 @@ void main(void)
         Alarm_SetTime(saved_h, saved_m);
         alarm_valid = 1;
 
-        /*
-         * Startup-match rule:
-         * latch an already-existing startup occurrence without
-         * starting the alarm buzzer.
-         */
         if (Alarm_Check(Clock_GetTime()))
         {
             alarm_match_latched = 1;
@@ -69,10 +64,6 @@ void main(void)
     }
     else
     {
-        /*
-         * Invalid / empty / read-error persistence must not arm
-         * Alarm Core's default 00:00 value.
-         */
         alarm_valid = 0;
         alarm_match_latched = 0;
     }
@@ -108,7 +99,7 @@ void main(void)
         Buzzer_Process();
         LED_Process();
 
-        /* Step C: Drain all accepted Button events in FIFO order. */
+        /* Step C: Drain all accepted Button events in FIFO order (INT04 & INT08). */
         while ((btn_event = Button_GetEvent()) != BUTTON_EVENT_NONE)
         {
             state_before = FSM_GetState();
@@ -136,10 +127,14 @@ void main(void)
                     break;
             }
 
-            /* Accepted-event feedback seam; full policy belongs to INT08. */
+            /*
+             * INT08 Key Feedback Policy:
+             * Every accepted button click requests a 0.3s short audible pip,
+             * including undefined combinations (DEC-14/INT08).
+             */
             Buzzer_BeepShort();
 
-            /* Accepted SET click refreshes activity; timeout belongs to INT09. */
+            /* Accepted SET click refreshes activity. */
             if (state_before != FSM_NORMAL)
             {
                 inactivity_active = 1;
@@ -150,7 +145,6 @@ void main(void)
             if ((state_before == FSM_NORMAL) &&
                 (fsm_event == FSM_EVENT_SW16))
             {
-                /* Valid alarm or Core default 00:00 becomes the edit baseline. */
                 alarm_edit_time = Alarm_GetTime();
                 alarm_edit_time.second = 0;
             }
@@ -199,11 +193,9 @@ void main(void)
             else if ((state_before == FSM_SET_ALARM_MINUTE) &&
                      (fsm_event == FSM_EVENT_SW16))
             {
-                /* Final confirmation commits runtime state before FSM leaves SET. */
                 Alarm_SetTime(alarm_edit_time.hour, alarm_edit_time.minute);
                 alarm_valid = 1;
 
-                /* Configuration equality is latched, not treated as occurrence. */
                 if (Alarm_Check(Clock_GetTime()))
                 {
                     alarm_match_latched = 1;
@@ -213,7 +205,6 @@ void main(void)
                     alarm_match_latched = 0;
                 }
 
-                /* Persistence result never rolls back the runtime confirmation. */
                 EEPROM_SaveAlarm(alarm_edit_time.hour, alarm_edit_time.minute);
             }
 
@@ -239,26 +230,20 @@ void main(void)
             if ((state_before == FSM_NORMAL) &&
                 (state_after == FSM_SET_TIME_HOUR))
             {
-                /* Entry discards any old partial sub-second phase. */
                 last_clock_tick = now;
             }
             else if (((state_before == FSM_SET_TIME_HOUR) ||
                       (state_before == FSM_SET_TIME_MINUTE)) &&
                      (state_after == FSM_NORMAL))
             {
-                /* Normal SET_TIME exit resumes from a fresh one-second anchor. */
                 last_clock_tick = now;
             }
-
-            /* INT04 sequencing seams for later stage-specific policy. */
         }
 
         /*
          * Startup/current-occurrence latch bookkeeping:
          * once Clock no longer matches the confirmed alarm,
          * re-arm the latch for a future natural occurrence.
-         *
-         * Actual natural-occurrence triggering belongs to INT-11.
          */
         if (alarm_valid && alarm_match_latched)
         {
