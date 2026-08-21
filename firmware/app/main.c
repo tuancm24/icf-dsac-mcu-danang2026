@@ -11,7 +11,7 @@
 
 /* =========================================================================
  * Production System Main Entry Point (Contract v2.7 Compliant)
- * Target MCU: SONiX SN8F5708 EVK (INT09 - Inactivity Timeout Integration)
+ * Target MCU: SONiX SN8F5708 EVK (INT11 & INT12 - Natural Alarm & 5s Buzzer)
  * ========================================================================= */
 
 void main(void)
@@ -47,7 +47,7 @@ void main(void)
     alarm_valid = 0;
     alarm_match_latched = 0;
 
-    /* 4. Restore Persisted Alarm from 24C05 EEPROM (DEC-10) */
+    /* 4. Restore Persisted Alarm from 24C05 EEPROM (DEC-10 / INT10) */
     if (EEPROM_ReadAlarm(&saved_h, &saved_m))
     {
         Alarm_SetTime(saved_h, saved_m);
@@ -83,7 +83,10 @@ void main(void)
     {
         unsigned long xdata now = Timer_GetTickMs();
 
-        /* Step A: Advance Clock only while current-time editing is not paused. */
+        /*
+         * Step A (INT02/11/12): Advance Clock and evaluate natural alarm occurrence.
+         * Clock advance is paused while current-time editing is active (INT05).
+         */
         if ((FSM_GetState() != FSM_SET_TIME_HOUR) &&
             (FSM_GetState() != FSM_SET_TIME_MINUTE))
         {
@@ -91,6 +94,23 @@ void main(void)
             {
                 last_clock_tick += 1000UL;
                 Clock_Tick1Second();
+
+                /*
+                 * INT11 & INT12: Natural Alarm Occurrence & One-Shot Latch.
+                 * Evaluated strictly in the logical Clock-tick context.
+                 */
+                if (alarm_valid && Alarm_Check(Clock_GetTime()))
+                {
+                    if (!alarm_match_latched)
+                    {
+                        Buzzer_StartAlarm();
+                        alarm_match_latched = 1;
+                    }
+                }
+                else
+                {
+                    alarm_match_latched = 0; /* Re-arm latch upon minute mismatch */
+                }
             }
         }
 
@@ -246,7 +266,7 @@ void main(void)
             {
                 state_before = FSM_GetState();
 
-                /* Audible timeout feedback pip (DEC-16 / INT08 closure) */
+                /* Audible timeout feedback pip 0.3s (DEC-16 / INT08 closure) */
                 Buzzer_BeepShort();
 
                 /* Dispatch synthetic timeout event to FSM */
