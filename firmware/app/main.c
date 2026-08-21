@@ -92,7 +92,6 @@ void main(void)
     {
         unsigned long xdata now = Timer_GetTickMs();
 
-
         /* Step A: Advance Clock only while current-time editing is not paused. */
         if ((FSM_GetState() != FSM_SET_TIME_HOUR) &&
             (FSM_GetState() != FSM_SET_TIME_MINUTE))
@@ -270,8 +269,9 @@ void main(void)
         }
 
         /*
-         * Stage G: Publish logical Display output from the current/resulting
-         * FSM state. Display scan/blink timing remains Driver/Platform-owned.
+         * Stage G: Publish logical Display and LED output from current/resulting
+         * FSM state (INT07). Display scan/blink and LED blink timing remain
+         * Driver/Platform-owned.
          */
         Display_SetColon(1);
 
@@ -281,25 +281,36 @@ void main(void)
                 display_time = Clock_GetTime();
                 Display_SetTime(display_time.hour, display_time.minute);
                 Display_SetBlinkMode(DISPLAY_BLINK_NONE);
+                LED_SetMode(LED_MODE_OFF);
                 break;
 
             case FSM_SET_TIME_HOUR:
                 display_time = Clock_GetTime();
                 Display_SetTime(display_time.hour, display_time.minute);
                 Display_SetBlinkMode(DISPLAY_BLINK_HOURS);
+                LED_SetMode(LED_MODE_OFF);
                 break;
 
             case FSM_SET_TIME_MINUTE:
                 display_time = Clock_GetTime();
                 Display_SetTime(display_time.hour, display_time.minute);
                 Display_SetBlinkMode(DISPLAY_BLINK_MINUTES);
+                LED_SetMode(LED_MODE_OFF);
+                break;
+
+            case FSM_SET_ALARM_HOUR:
+                Display_SetTime(alarm_edit_time.hour, alarm_edit_time.minute);
+                Display_SetBlinkMode(DISPLAY_BLINK_HOURS);
+                LED_SetMode(LED_MODE_BLINK_ALARM_SETTING);
+                break;
+
+            case FSM_SET_ALARM_MINUTE:
+                Display_SetTime(alarm_edit_time.hour, alarm_edit_time.minute);
+                Display_SetBlinkMode(DISPLAY_BLINK_MINUTES);
+                LED_SetMode(LED_MODE_BLINK_ALARM_SETTING);
                 break;
 
             default:
-                /*
-                 * SET_ALARM_* Display source belongs to INT06.
-                 * Do not invent alarm-edit data during INT03.
-                 */
                 break;
         }
 
