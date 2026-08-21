@@ -11,7 +11,7 @@
 
 /* =========================================================================
  * Production System Main Entry Point (Contract v2.7 Compliant)
- * Target MCU: SONiX SN8F5708 EVK (INT08 - Key Feedback Integration)
+ * Target MCU: SONiX SN8F5708 EVK (INT09 - Inactivity Timeout Integration)
  * ========================================================================= */
 
 void main(void)
@@ -127,14 +127,10 @@ void main(void)
                     break;
             }
 
-            /*
-             * INT08 Key Feedback Policy:
-             * Every accepted button click requests a 0.3s short audible pip,
-             * including undefined combinations (DEC-14/INT08).
-             */
+            /* INT08 Key Feedback: Every accepted click requests 0.3s beep */
             Buzzer_BeepShort();
 
-            /* Accepted SET click refreshes activity. */
+            /* Accepted SET click refreshes activity timestamp */
             if (state_before != FSM_NORMAL)
             {
                 inactivity_active = 1;
@@ -237,6 +233,42 @@ void main(void)
                      (state_after == FSM_NORMAL))
             {
                 last_clock_tick = now;
+            }
+        }
+
+        /*
+         * Step D (INT09): 30-Second Inactivity Timeout Evaluation.
+         * Evaluated strictly after draining all Button FIFO events.
+         */
+        if (inactivity_active && (FSM_GetState() != FSM_NORMAL))
+        {
+            if ((unsigned long)(now - last_activity_tick) >= TIMEOUT_INACTIVITY_MS)
+            {
+                state_before = FSM_GetState();
+
+                /* Audible timeout feedback pip (DEC-16 / INT08 closure) */
+                Buzzer_BeepShort();
+
+                /* Dispatch synthetic timeout event to FSM */
+                FSM_HandleEvent(FSM_EVENT_TIMEOUT_30S);
+                state_after = FSM_GetState();
+
+                inactivity_active = 0;
+
+                /*
+                 * If timeout occurred from current-time setting, resume
+                 * fresh ~1000ms clock anchor (INT05 closure).
+                 */
+                if ((state_before == FSM_SET_TIME_HOUR) ||
+                    (state_before == FSM_SET_TIME_MINUTE))
+                {
+                    last_clock_tick = now;
+                }
+
+                /*
+                 * If timeout occurred from alarm setting, temporary alarm_edit_time
+                 * is discarded without committing to Alarm Core or saving to EEPROM.
+                 */
             }
         }
 
