@@ -19,6 +19,7 @@ Test source:
 
 ---
 
+> **Historical verification note:** The simulator evidence below was captured against the earlier 16 MHz timer configuration. The verified final production baseline `1ecf0b4` uses the 32 MHz IHRC with Timer0 clocked from Fcpu/12 and an approximately 1 ms software-reloaded interrupt. The historical PASS results below are preserved as originally recorded and are not presented as final production timing provenance. See `docs/release/FINAL_RELEASE_1ecf0b4.md` for the final release evidence.
 ## 2. Test Environment
 
 - **Target MCU:** SONiX SN8F5708 (16 MHz Internal Oscillator)

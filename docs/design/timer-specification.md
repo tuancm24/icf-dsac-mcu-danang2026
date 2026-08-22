@@ -4,14 +4,14 @@
 
 This document defines the requirements, architecture, behavior, and public interface of the Platform Timer and System Tick module for the SONiX SN8F5708 EVK digital clock application.
 
-The module provides high-precision 1ms periodic interrupt generation, global tick counting, non-blocking time measuring utilities, and microsecond delay functions.
+The module provides approximately 1 ms periodic interrupt generation, global tick counting, non-blocking time measuring utilities, and microsecond delay functions.
 
 ---
 
 ## 2. Scope
 
 This specification covers:
-- Hardware target: Hardware Timer 0 on SONiX SN8F5708 (16 MHz / 12 MHz Oscillator).
+- Hardware target: Hardware Timer 0 on SONiX SN8F5708 using 32 MHz IHRC with Timer0 clocked from Fcpu/12.
 - Source files:
   - `firmware/platform/timer.c`
   - `firmware/platform/timer.h`
@@ -32,7 +32,7 @@ This specification covers:
 
 ### Module Does NOT Own:
 - 1-second clock increment logic (owned by Clock Core).
-- Button debouncing logic or display scanning execution.
+- Button debouncing logic or application-level display content/state policy.
 
 ---
 

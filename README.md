@@ -37,7 +37,7 @@ The system implements a real-time digital clock and alarm controller on the **SO
 | Storage | 24C05 EEPROM |
 | Team | 2 engineers |
 | Competition | DSAC FPGA & MCU Design Competition 2026 |
-| Current integration candidate | `1ecf0b4` |
+| Verified firmware baseline | `1ecf0b4` |
 
 ---
 
@@ -581,7 +581,7 @@ scoreboards, constrained-random verification and UVM.
 
 The repository contains the project's implementation history, design documentation, integration plans, test plans and hardware validation material.
 
-Current integration candidate:
+Verified firmware baseline:
 
 ```text
 1ecf0b4
@@ -592,6 +592,8 @@ For deeper technical details, start with:
 - `docs/design/`
 - `docs/integration/`
 - `docs/testing/`
+- [Final Technical Report — PDF](docs/report/Report_MCU_Danang2026_FINAL_v1.3.pdf)
+- [Final Technical Report — DOCX](docs/report/Report_MCU_Danang2026_FINAL_v1.3.docx)
 
 ---
 
