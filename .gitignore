@@ -4,6 +4,8 @@ out/
 output/
 Debug/
 Release/
+!docs/release/
+!docs/release/**
 dist/
 Listings/
 Objects/
